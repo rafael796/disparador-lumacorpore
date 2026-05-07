@@ -1,0 +1,367 @@
+// === STATE ===
+let selectedContacts = [];
+let allLoadedContacts = [];
+let currentStep = 1;
+let dispatchId = null;
+let eventSource = null;
+let uploadedMediaId = null;
+
+// === INIT ===
+document.addEventListener('DOMContentLoaded', loadTags);
+
+// === TAGS ===
+async function loadTags() {
+  const container = document.getElementById('tags-list');
+  try {
+    const resp = await fetch('/api/tags');
+    const tags = await resp.json();
+    container.innerHTML = tags.map(t => `
+      <button class="tag-chip" onclick="selectTag('${t.title}', this)" style="border-left: 3px solid ${t.color || '#10b981'}">
+        ${t.title}
+      </button>
+    `).join('');
+  } catch (e) {
+    container.innerHTML = '<p class="empty-state">Erro ao carregar tags</p>';
+  }
+}
+
+async function selectTag(tag, el) {
+  // Visual
+  document.querySelectorAll('.tag-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('btn-all-contacts').classList.remove('active');
+
+  await loadContactsByTag(tag);
+}
+
+async function loadAllContacts() {
+  document.querySelectorAll('.tag-chip').forEach(c => c.classList.remove('active'));
+  const btn = document.getElementById('btn-all-contacts');
+  btn.classList.add('active');
+
+  await loadContactsByTag(null);
+}
+
+function clearContactsList() {
+  if (loadContactsAbortController) {
+    loadContactsAbortController.abort();
+  }
+  document.querySelectorAll('.tag-chip').forEach(c => c.classList.remove('active'));
+  document.getElementById('btn-all-contacts').classList.remove('active');
+  
+  allLoadedContacts = [];
+  selectedContacts = [];
+  
+  const table = document.getElementById('contacts-table');
+  table.innerHTML = '<p class="empty-state">Selecione uma tag para carregar contatos</p>';
+  document.getElementById('contact-count').textContent = '0';
+  document.getElementById('btn-next-1').disabled = true;
+  document.getElementById('search-input').value = '';
+}
+
+let loadContactsAbortController = null;
+
+async function loadContactsByTag(tag) {
+  if (loadContactsAbortController) {
+    loadContactsAbortController.abort();
+  }
+  loadContactsAbortController = new AbortController();
+  const signal = loadContactsAbortController.signal;
+
+  const table = document.getElementById('contacts-table');
+  table.innerHTML = '<div style="padding:40px;text-align:center"><div class="loading-spinner" style="margin:0 auto"></div><p id="loading-text" style="margin-top:12px;color:var(--text-muted)">Carregando contatos...</p></div>';
+
+  allLoadedContacts = [];
+  selectedContacts = [];
+  let page = 1;
+  let hasMore = true;
+
+  try {
+    while (hasMore) {
+      const resp = await fetch('/api/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tag, startPage: page }),
+        signal
+      });
+      
+      if (!resp.ok) throw new Error('Erro na API');
+      const data = await resp.json();
+      
+      allLoadedContacts.push(...data.contacts);
+      selectedContacts = [...allLoadedContacts];
+      hasMore = data.hasMore;
+      page = data.nextPage; // Pula para a próxima página do chunk
+
+      const loadingText = document.getElementById('loading-text');
+      if (loadingText) {
+         const total = data.totalInBase || '...';
+         loadingText.textContent = `Carregando... ${allLoadedContacts.length} de ${total}`;
+      }
+
+      // Update table incrementally
+      renderContacts(selectedContacts);
+      document.getElementById('btn-next-1').disabled = selectedContacts.length === 0;
+    }
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      table.innerHTML = '<p class="empty-state">Erro ao carregar contatos</p>';
+      console.error(e);
+    }
+  }
+}
+
+function renderContacts(contacts) {
+  const table = document.getElementById('contacts-table');
+  document.getElementById('contact-count').textContent = contacts.length;
+
+  if (contacts.length === 0) {
+    table.innerHTML = '<p class="empty-state">Nenhum contato encontrado</p>';
+    return;
+  }
+
+  table.innerHTML = contacts.slice(0, 200).map(c => `
+    <div class="contact-row">
+      <span class="contact-name">${c.name || 'Sem nome'}</span>
+      <span class="contact-phone">${c.phone_number}</span>
+    </div>
+  `).join('');
+
+  if (contacts.length > 200) {
+    table.innerHTML += `<p class="empty-state">... e mais ${contacts.length - 200} contatos</p>`;
+  }
+}
+
+function filterContacts() {
+  const query = document.getElementById('search-input').value.toLowerCase();
+  if (!query) {
+    selectedContacts = [...allLoadedContacts];
+  } else {
+    selectedContacts = allLoadedContacts.filter(c =>
+      (c.name || '').toLowerCase().includes(query) ||
+      (c.phone_number || '').includes(query)
+    );
+  }
+  renderContacts(selectedContacts);
+}
+
+// === NAVIGATION ===
+function goToStep(step) {
+  if (step === 2 && selectedContacts.length === 0) return;
+  currentStep = step;
+
+  document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+  document.getElementById(`step${step}`).classList.add('active');
+
+  document.querySelectorAll('.step').forEach(el => {
+    const s = parseInt(el.dataset.step);
+    el.classList.remove('active', 'done');
+    if (s === step) el.classList.add('active');
+    else if (s < step) el.classList.add('done');
+  });
+
+  if (step === 2) updatePreview();
+}
+
+// === PREVIEW ===
+function updatePreview() {
+  const msg = document.getElementById('message-input').value;
+  const preview = msg.replace(/\{NOME\}/g, 'Rafael');
+  document.getElementById('preview-bubble').textContent = preview;
+}
+
+document.getElementById('message-input')?.addEventListener('input', updatePreview);
+
+// === UPLOAD ===
+async function handleUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const preview = document.getElementById('upload-preview');
+  preview.innerHTML = '⏳ Enviando...';
+
+  const formData = new FormData();
+  formData.append('media', file);
+
+  try {
+    const resp = await fetch('/api/upload', { method: 'POST', body: formData });
+    const data = await resp.json();
+    uploadedMediaId = data.id;
+    preview.innerHTML = `✅ ${data.originalName} (${(data.size / 1024 / 1024).toFixed(1)}MB)`;
+  } catch (e) {
+    preview.innerHTML = '❌ Erro no upload';
+  }
+}
+
+// === DISPATCH ===
+async function startDispatch() {
+  const title = document.getElementById('campaign-title').value.trim();
+  if (!title) { alert('Digite um título para a campanha!'); return; }
+  const message = document.getElementById('message-input').value;
+  if (!message.trim()) { alert('Digite uma mensagem!'); return; }
+
+  const dailyLimit = parseInt(document.getElementById('daily-limit').value) || 100;
+  const pauseBatch = parseInt(document.getElementById('pause-batch').value) || 0;
+  const pauseDuration = parseInt(document.getElementById('pause-duration').value) || 300;
+  const useAI = document.getElementById('use-ai').checked;
+  const aiProvider = document.getElementById('ai-provider').value;
+
+  goToStep(3);
+
+  // Reset stats
+  document.getElementById('stat-sent').textContent = '0';
+  document.getElementById('stat-pending').textContent = selectedContacts.length;
+  document.getElementById('stat-errors').textContent = '0';
+  document.getElementById('progress-percent').textContent = '0%';
+  document.getElementById('progress-count').textContent = `0 / ${selectedContacts.length}`;
+  document.getElementById('dispatch-log').innerHTML = '';
+  document.getElementById('btn-pause').style.display = '';
+  document.getElementById('btn-cancel').style.display = '';
+  document.getElementById('btn-new').style.display = 'none';
+
+  try {
+    const resp = await fetch('/api/dispatch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title,
+        contacts: selectedContacts,
+        message,
+        mediaId: uploadedMediaId,
+        dailyLimit,
+        pauseBatch,
+        pauseDuration,
+        useAI,
+        aiProvider
+      })
+    });
+    const data = await resp.json();
+    dispatchId = data.dispatchId;
+    startProgressStream();
+  } catch (e) {
+    alert('Erro ao iniciar disparo: ' + e.message);
+  }
+}
+
+function startProgressStream() {
+  if (eventSource) eventSource.close();
+
+  eventSource = new EventSource(`/api/dispatch/${dispatchId}/progress`);
+  eventSource.onmessage = (event) => {
+    const d = JSON.parse(event.data);
+    updateProgress(d);
+  };
+  eventSource.onerror = () => {
+    eventSource.close();
+  };
+}
+
+function updateProgress(d) {
+  const total = d.total;
+  const processed = d.sent + d.errors;
+  const percent = total > 0 ? Math.round((processed / total) * 100) : 0;
+  const pending = total - processed;
+
+  // Stats
+  document.getElementById('stat-sent').textContent = d.sent;
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-errors').textContent = d.errors;
+
+  // Ring
+  document.getElementById('progress-percent').textContent = `${percent}%`;
+  document.getElementById('progress-count').textContent = `${processed} / ${total}`;
+  const circle = document.getElementById('progress-circle');
+  const circumference = 2 * Math.PI * 52;
+  circle.style.strokeDashoffset = circumference - (percent / 100) * circumference;
+
+  // Log
+  const logContainer = document.getElementById('dispatch-log');
+  logContainer.innerHTML = (d.log || []).map(entry => {
+    let icon = '';
+    if (entry.status === 'ok') icon = '✅';
+    else if (entry.status === 'error') icon = '❌';
+    else if (entry.status === 'wait') icon = '⏳';
+    else if (entry.status === 'ia') icon = '🤖';
+
+    return `<div class="log-entry">
+      <span class="log-time">${entry.time}</span>
+      <span class="log-status">${icon}</span>
+      <span class="log-name">${entry.contact}</span>
+      <span class="log-message">${entry.message}</span>
+    </div>`;
+  }).join('');
+  logContainer.scrollTop = logContainer.scrollHeight;
+
+  // Pause button text
+  document.getElementById('btn-pause').textContent = d.paused ? '▶️ Retomar' : '⏸️ Pausar';
+
+  // Server Time & Timer
+  document.getElementById('server-time').textContent = d.serverTime || '--:--:--';
+  if (d.nextMessageAt) {
+    document.getElementById('countdown-container').style.display = 'block';
+    if (window._countdownInterval) clearInterval(window._countdownInterval);
+    
+    const updateTimer = () => {
+      const msLeft = d.nextMessageAt - Date.now();
+      if (msLeft <= 0) {
+        document.getElementById('countdown-timer').textContent = '00:00';
+        clearInterval(window._countdownInterval);
+        return;
+      }
+      const totalSecs = Math.floor(msLeft / 1000);
+      const hours = Math.floor(totalSecs / 3600);
+      const mins = Math.floor((totalSecs % 3600) / 60);
+      const secs = totalSecs % 60;
+      
+      let timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      if (hours > 0) timeStr = `${String(hours).padStart(2, '0')}:${timeStr}`;
+      
+      document.getElementById('countdown-timer').textContent = timeStr;
+    };
+    
+    updateTimer();
+    window._countdownInterval = setInterval(updateTimer, 1000);
+  } else {
+    document.getElementById('countdown-container').style.display = 'none';
+    if (window._countdownInterval) clearInterval(window._countdownInterval);
+  }
+
+  // Done
+  if (d.status === 'done' || d.status === 'cancelled') {
+    if (eventSource) eventSource.close();
+    if (window._countdownInterval) clearInterval(window._countdownInterval);
+    document.getElementById('countdown-container').style.display = 'none';
+    document.getElementById('btn-pause').style.display = 'none';
+    document.getElementById('btn-cancel').style.display = 'none';
+    document.getElementById('btn-new').style.display = '';
+
+    if (d.status === 'done') {
+      document.getElementById('progress-percent').textContent = '✅';
+      document.getElementById('progress-percent').style.fontSize = '36px';
+      document.getElementById('report-container').style.display = 'block';
+      document.getElementById('btn-download-report').href = `/api/dispatch/${dispatchId}/report`;
+    }
+  }
+}
+
+async function togglePause() {
+  if (!dispatchId) return;
+  await fetch(`/api/dispatch/${dispatchId}/pause`, { method: 'POST' });
+}
+
+async function cancelDispatch() {
+  if (!dispatchId) return;
+  if (!confirm('Tem certeza que deseja cancelar?')) return;
+  await fetch(`/api/dispatch/${dispatchId}/cancel`, { method: 'POST' });
+}
+
+function resetAll() {
+  currentStep = 1;
+  selectedContacts = [];
+  allLoadedContacts = [];
+  dispatchId = null;
+  uploadedMediaId = null;
+  document.getElementById('progress-percent').style.fontSize = '';
+  goToStep(1);
+  loadTags();
+}

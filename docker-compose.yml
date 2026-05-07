@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  disparador:
+    build: .
+    container_name: luma-disparador
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - CHATWOOT_TOKEN=${CHATWOOT_TOKEN}
+      - CHATWOOT_URL=${CHATWOOT_URL}
+      - INBOX_ID=${INBOX_ID}
+      - PORT=3000
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    networks:
+      - coolify
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.luma-disparador.rule=Host(`disparador.lumacorpore.com.br`)"
+      - "traefik.http.routers.luma-disparador.entrypoints=https"
+      - "traefik.http.routers.luma-disparador.tls=true"
+      - "traefik.http.routers.luma-disparador.tls.certresolver=letsencrypt"
+      - "traefik.http.services.luma-disparador.loadbalancer.server.port=3000"
+    volumes:
+      - luma_uploads:/app/uploads
+
+networks:
+  coolify:
+    external: true
+
+volumes:
+  luma_uploads:
