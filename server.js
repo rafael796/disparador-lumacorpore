@@ -270,6 +270,14 @@ REGRAS:
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // --- HELPERS DE AGENDAMENTO ---
+function formatBR(date, options = {}) {
+  const defaultOptions = {
+    timeZone: 'America/Sao_Paulo',
+    hour12: false
+  };
+  return new Date(date).toLocaleString('pt-BR', { ...defaultOptions, ...options });
+}
+
 function getBrazilDate() {
   const now = new Date();
   const formatter = new Intl.DateTimeFormat('en-US', {
@@ -505,7 +513,7 @@ app.get('/api/dispatch/:id/progress', (req, res) => {
       total: d.total,
       log: d.log.slice(-20),
       paused: d.paused,
-      serverTime: new Date().toLocaleTimeString('pt-BR'),
+      serverTime: getBrazilDate().toLocaleTimeString('pt-BR'),
       nextMessageAt: d.nextMessageAt || null
     })}\n\n`);
 
@@ -546,9 +554,9 @@ app.get('/api/dispatch/:id/report', (req, res) => {
   doc.moveDown();
   
   doc.fontSize(14).text(`Título da Campanha: ${d.title}`);
-  doc.fontSize(12).text(`Início: ${new Date(d.startedAt).toLocaleString('pt-BR')}`);
+  doc.fontSize(12).text(`Início: ${formatBR(d.startedAt)}`);
   if (d.finishedAt) {
-    doc.text(`Término: ${new Date(d.finishedAt).toLocaleString('pt-BR')}`);
+    doc.text(`Término: ${formatBR(d.finishedAt)}`);
   }
   doc.moveDown();
 
@@ -645,8 +653,8 @@ async function runDispatch(id) {
     if (d.cancelled) break;
 
     const contact = d.contacts[i];
-    const timestamp = new Date().toLocaleTimeString('pt-BR');
-    const hoje = new Date().toISOString().split('T')[0];
+    const timestamp = formatBR(new Date(), { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const hoje = formatBR(new Date(), { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
 
     try {
       // Extrair primeiro nome real (ignorar se for número de telefone)
