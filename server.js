@@ -556,9 +556,10 @@ app.get('/api/dispatch/:id/report', (req, res) => {
 
 // --- DISPATCH ENGINE ---
 async function runDispatch(id) {
-  const d = dispatches[id];
-  const inboxId = Number(INBOX_ID) || 3;
-  let lastDay = new Date().getDate();
+  try {
+    const d = dispatches[id];
+    const inboxId = Number(INBOX_ID) || 3;
+    let lastDay = new Date().getDate();
 
   for (let i = 0; i < d.contacts.length; i++) {
     // Checar mudança de dia para resetar o contador
