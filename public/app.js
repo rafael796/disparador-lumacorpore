@@ -410,7 +410,8 @@ async function startDispatch() {
 function startProgressStream() {
   if (eventSource) eventSource.close();
 
-  eventSource = new EventSource(`/api/dispatch/${dispatchId}/progress`);
+  const qs = authToken ? `?token=${authToken}` : '';
+  eventSource = new EventSource(`/api/dispatch/${dispatchId}/progress${qs}`);
   eventSource.onmessage = (event) => {
     const d = JSON.parse(event.data);
     updateProgress(d);

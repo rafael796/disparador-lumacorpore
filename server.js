@@ -68,8 +68,9 @@ const authMiddleware = (req, res, next) => {
   if (!AUTH_ENABLED) return next();
   if (!req.path.startsWith('/api') || req.path === '/api/login') return next();
   
-  const authHeader = req.headers['authorization'];
-  if (authHeader === APP_PASSWORD) return next();
+  // SSE usa query params pq EventSource não suporta custom headers
+  const token = req.headers['authorization'] || req.query.token;
+  if (token === APP_PASSWORD) return next();
   
   res.status(401).json({ error: 'Não autorizado' });
 };
