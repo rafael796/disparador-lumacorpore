@@ -141,7 +141,7 @@ async function loadHistory() {
         <td style="color:var(--success)">${h.sent}</td>
         <td style="color:var(--danger)">${h.errors}</td>
         <td>
-          ${h.pdfReport ? `<a href="/api/reports/${h.pdfReport}" class="btn btn-outline" style="padding:4px 8px;font-size:11px">📥 PDF</a>` : '-'}
+          ${h.pdfReport ? `<a href="/api/reports/${h.pdfReport}${authToken ? '?token=' + authToken : ''}" class="btn btn-outline" style="padding:4px 8px;font-size:11px" target="_blank">📥 PDF</a>` : '-'}
         </td>
       </tr>
     `).join('');
@@ -504,7 +504,7 @@ function updateProgress(d) {
       document.getElementById('progress-percent').textContent = '✅';
       document.getElementById('progress-percent').style.fontSize = '36px';
       document.getElementById('report-container').style.display = 'block';
-      document.getElementById('btn-download-report').href = `/api/dispatch/${dispatchId}/report`;
+      document.getElementById('btn-download-report').href = `/api/dispatch/${dispatchId}/report${authToken ? '?token=' + authToken : ''}`;
     }
   }
 }
