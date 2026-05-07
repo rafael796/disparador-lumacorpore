@@ -318,12 +318,15 @@ function calculateDelay(dailyLimit, sentToday) {
   
   const baseDelay = Math.floor(secondsLeft / remainingToday);
   
-  // Caos controlado (± 40%)
-  const variance = Math.floor(baseDelay * 0.4);
-  const minDelay = Math.max(10, baseDelay - variance);
-  const maxDelay = baseDelay + variance;
+  // TRAVA DE SEGURANÇA MÁXIMA: Mínimo de 25 minutos (1500 segundos)
+  // Adicionamos uma variância extra de 0 a 5 minutos (300 seg) para humanizar
+  const safetyMin = 1500; 
+  const randomExtra = Math.floor(Math.random() * 300); 
+
+  // O delay será o maior entre o cálculo sugerido e a nossa trava de segurança
+  const finalDelay = Math.max(safetyMin + randomExtra, baseDelay);
   
-  return Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
+  return finalDelay;
 }
 
 // --- HELPERS (PDF) ---
