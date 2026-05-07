@@ -19,7 +19,7 @@ const upload = multer({ dest: uploadsDir, limits: { fileSize: 40 * 1024 * 1024 }
 
 // State
 const dispatches = {};
-const { CHATWOOT_TOKEN, CHATWOOT_URL, INBOX_ID, APP_PASSWORD = 'luma' } = process.env;
+const { CHATWOOT_TOKEN, CHATWOOT_URL, INBOX_ID } = process.env;
 const historyFile = path.join(uploadsDir, 'history.json');
 
 // --- HISTORY HELPERS ---
@@ -53,17 +53,23 @@ function addToHistory(entry) {
   saveHistory(history.slice(0, 100)); // Limite de 100 registros
 }
 
+// Autenticação (desativa se APP_PASSWORD não estiver definida)
+const AUTH_ENABLED = !!process.env.APP_PASSWORD;
+const APP_PASSWORD = process.env.APP_PASSWORD || '';
+
+if (AUTH_ENABLED) {
+  console.log('🔒 Autenticação ATIVADA (APP_PASSWORD definida)');
+} else {
+  console.log('🔓 Autenticação DESATIVADA (sem APP_PASSWORD no .env)');
+}
+
 // Middleware de Autenticação para API
 const authMiddleware = (req, res, next) => {
-  // Ignora rotas que não sejam da API ou a rota de login
-  if (!req.path.startsWith('/api') || req.path === '/api/login') {
-    return next();
-  }
+  if (!AUTH_ENABLED) return next();
+  if (!req.path.startsWith('/api') || req.path === '/api/login') return next();
   
   const authHeader = req.headers['authorization'];
-  if (authHeader === APP_PASSWORD) {
-    return next();
-  }
+  if (authHeader === APP_PASSWORD) return next();
   
   res.status(401).json({ error: 'Não autorizado' });
 };
@@ -72,6 +78,9 @@ app.use(authMiddleware);
 
 // Rota de Login
 app.post('/api/login', (req, res) => {
+  if (!AUTH_ENABLED) {
+    return res.json({ success: true, token: 'dev-mode' });
+  }
   const { password } = req.body;
   if (password === APP_PASSWORD) {
     res.json({ success: true, token: APP_PASSWORD });

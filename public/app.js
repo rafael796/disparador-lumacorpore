@@ -9,6 +9,12 @@ let uploadedMediaId = null;
 // === AUTH ===
 let authToken = localStorage.getItem('luma_auth_token');
 
+// Limpa tokens antigos inválidos
+if (authToken === 'luma' || authToken === 'undefined') {
+  localStorage.removeItem('luma_auth_token');
+  authToken = null;
+}
+
 async function authorizedFetch(url, options = {}) {
   if (!options.headers) options.headers = {};
   if (authToken) {
@@ -31,13 +37,41 @@ function hideLogin() {
 }
 
 // === INIT ===
-document.addEventListener('DOMContentLoaded', () => {
-  if (!authToken) {
-    showLogin();
-  } else {
-    hideLogin();
-    loadTags();
+document.addEventListener('DOMContentLoaded', async () => {
+  // Tenta login automático (detecta se servidor exige senha)
+  try {
+    const resp = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: '' })
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      authToken = data.token;
+      localStorage.setItem('luma_auth_token', authToken);
+      hideLogin();
+      loadTags();
+      return;
+    }
+  } catch (e) {}
+  
+  // Servidor exige senha
+  if (authToken) {
+    // Testa se o token salvo ainda é válido
+    try {
+      const test = await fetch('/api/tags', { headers: { 'Authorization': authToken } });
+      if (test.ok) {
+        hideLogin();
+        loadTags();
+        return;
+      }
+    } catch (e) {}
   }
+  
+  // Token inválido ou inexistente → mostra login
+  localStorage.removeItem('luma_auth_token');
+  authToken = null;
+  showLogin();
   
   // Login Handler
   document.getElementById('btn-login').addEventListener('click', async () => {
@@ -77,11 +111,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // === NAVIGATION ===
 function switchTab(tabId) {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
+  document.querySelectorAll('.header-tab').forEach(t => t.classList.remove('active'));
   
   document.getElementById(`tab-${tabId}`).classList.add('active');
-  const activeLink = Array.from(document.querySelectorAll('.tab-link')).find(l => l.innerText.toLowerCase().includes(tabId === 'dispatch' ? 'novo' : 'hist'));
-  if (activeLink) activeLink.classList.add('active');
+  const btn = document.querySelector(`.header-tab[data-tab="${tabId}"]`);
+  if (btn) btn.classList.add('active');
   
   if (tabId === 'history') loadHistory();
 }
@@ -219,38 +253,47 @@ async function loadContactsByTag(tag) {
 }
 
 function renderContacts(contacts) {
-  const table = document.getElementById('contacts-table');
+  const container = document.getElementById('contacts-table');
   document.getElementById('contact-count').textContent = contacts.length;
 
   if (contacts.length === 0) {
-    table.innerHTML = '<p class="empty-state">Nenhum contato encontrado</p>';
+    container.innerHTML = '<p class="empty-state">Nenhum contato encontrado</p>';
     return;
   }
 
-  table.innerHTML = contacts.slice(0, 300).map(c => `
-    <div class="contact-row">
-      <div style="display:flex; flex-direction:column;">
-        <span class="contact-name">${c.name || 'Sem nome'}</span>
-        <span style="font-size:10px; color:var(--text-muted)">Último envio: ${c.last_dispatch || 'Nunca'}</span>
-      </div>
-      <div style="display:flex; align-items:center; gap:12px;">
-        <span class="contact-phone">${c.phone_number}</span>
-        <button onclick="removeContact(${c.id})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px; padding:4px;" title="Remover da lista">
-          🗑️
-        </button>
-      </div>
-    </div>
-  `).join('');
+  const rows = contacts.slice(0, 500).map(c => {
+    const dateStr = c.last_dispatch && c.last_dispatch !== 'Nunca'
+      ? c.last_dispatch
+      : '<span style="color:var(--text-muted);font-style:italic">Nunca</span>';
+    return `<tr>
+      <td class="col-name">${c.name || 'Sem nome'}</td>
+      <td class="col-phone">${c.phone_number}</td>
+      <td class="col-date">${dateStr}</td>
+      <td class="col-action"><button class="btn-remove" onclick="removeContact(${c.id})" title="Remover">✕</button></td>
+    </tr>`;
+  }).join('');
 
-  if (contacts.length > 300) {
-    table.innerHTML += `<p class="empty-state">... e mais ${contacts.length - 300} contatos</p>`;
+  let extra = '';
+  if (contacts.length > 500) {
+    extra = `<tr><td colspan="4" class="empty-state" style="padding:12px">... e mais ${contacts.length - 500} contatos</td></tr>`;
   }
+
+  container.innerHTML = `<table class="contacts-grid">
+    <thead><tr>
+      <th>Contato</th>
+      <th>Telefone</th>
+      <th>Último Envio</th>
+      <th></th>
+    </tr></thead>
+    <tbody>${rows}${extra}</tbody>
+  </table>`;
 }
 
 function removeContact(id) {
   selectedContacts = selectedContacts.filter(c => c.id != id);
   allLoadedContacts = allLoadedContacts.filter(c => c.id != id);
   renderContacts(selectedContacts);
+  document.getElementById('btn-next-1').disabled = selectedContacts.length === 0;
 }
 
 function filterContacts() {

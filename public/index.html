@@ -9,87 +9,96 @@
 </head>
 <body>
   <div class="app">
-    <!-- Header -->
+    <!-- Header com Tabs integradas -->
     <header class="header">
-      <div class="header-brand">
-        <span class="header-icon">🚀</span>
-        <h1>Luma Corpore Disparador em Massa</h1>
+      <div class="header-left">
+        <div class="header-brand">
+          <span class="header-icon">🚀</span>
+          <h1>Luma Corpore <span class="header-subtle">Disparador</span></h1>
+        </div>
+        <nav class="header-tabs">
+          <button class="header-tab active" data-tab="dispatch" onclick="switchTab('dispatch')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
+            Novo Disparo
+          </button>
+          <button class="header-tab" data-tab="history" onclick="switchTab('history')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Histórico
+          </button>
+        </nav>
       </div>
       <span class="header-badge">v1.0</span>
     </header>
 
-    <!-- Tabs Navigation -->
-    <nav class="tabs-nav">
-      <button class="tab-link active" onclick="switchTab('dispatch')">📤 Novo Disparo</button>
-      <button class="tab-link" onclick="switchTab('history')">📜 Histórico</button>
-    </nav>
-
-    <!-- Tab: Dispatch -->
+    <!-- ======================== -->
+    <!-- TAB: NOVO DISPARO        -->
+    <!-- ======================== -->
     <div id="tab-dispatch" class="tab-pane active">
+
       <!-- Stepper -->
       <div class="stepper">
-      <div class="step active" data-step="1">
-        <div class="step-circle">1</div>
-        <span>Selecionar Contatos</span>
-      </div>
-      <div class="step-line"></div>
-      <div class="step" data-step="2">
-        <div class="step-circle">2</div>
-        <span>Mensagem</span>
-      </div>
-      <div class="step-line"></div>
-      <div class="step" data-step="3">
-        <div class="step-circle">3</div>
-        <span>Disparar</span>
-      </div>
-    </div>
-
-    <!-- Step 1: Selecionar Contatos -->
-    <div class="step-content active" id="step1">
-      <div class="two-columns">
-        <div class="card">
-          <h2>📋 Filtrar por Tag</h2>
-          <div id="tags-list" class="tags-container">
-            <div class="loading-spinner"></div>
-          </div>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-outline" id="btn-all-contacts" onclick="loadAllContacts()">
-              📦 Todos os Contatos
-            </button>
-            <button class="btn btn-outline" id="btn-clear-contacts" onclick="clearContactsList()">
-              🗑️ Limpar Lista
-            </button>
-          </div>
+        <div class="step active" data-step="1">
+          <div class="step-circle">1</div>
+          <span>Selecionar Contatos</span>
         </div>
-        <div class="card">
-          <h2>👥 Contatos Selecionados (<span id="contact-count">0</span>)</h2>
-          <div class="search-box">
-            <input type="text" id="search-input" placeholder="Buscar por nome ou telefone..." oninput="filterContacts()">
-          </div>
-          <div id="contacts-table" class="contacts-table">
-            <p class="empty-state">Selecione uma tag para carregar contatos</p>
-          </div>
+        <div class="step-line"></div>
+        <div class="step" data-step="2">
+          <div class="step-circle">2</div>
+          <span>Mensagem</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step" data-step="3">
+          <div class="step-circle">3</div>
+          <span>Disparar</span>
         </div>
       </div>
-      <div class="step-actions">
-        <div></div>
-        <button class="btn btn-primary" onclick="goToStep(2)" id="btn-next-1" disabled>
-          Próximo →
-        </button>
-      </div>
-    </div>
 
-    <!-- Step 2: Mensagem -->
-    <div class="step-content" id="step2">
-      <div class="two-columns">
-        <div class="card">
-          <h2>✍️ Compor Mensagem</h2>
-          <div class="setting" style="margin-bottom: 16px;">
-            <label>🏷️ Título da Campanha (Obrigatório)</label>
-            <input type="text" id="campaign-title" placeholder="Ex: Promoção Vasinhos Maio/26" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+      <!-- Step 1: Selecionar Contatos -->
+      <div class="step-content active" id="step1">
+        <div class="two-columns">
+          <div class="card">
+            <h2>📋 Filtrar por Tag</h2>
+            <div id="tags-list" class="tags-container">
+              <div class="loading-spinner"></div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-outline" id="btn-all-contacts" onclick="loadAllContacts()">
+                📦 Todos os Contatos
+              </button>
+              <button class="btn btn-outline" id="btn-clear-contacts" onclick="clearContactsList()">
+                🗑️ Limpar Lista
+              </button>
+            </div>
           </div>
-          <p class="hint">Use <code>{NOME}</code> para inserir o nome do contato automaticamente.</p>
-          <textarea id="message-input" rows="10" placeholder="Digite sua mensagem aqui...">🌸 Oi {NOME}! Aqui é a Wanessa, biomédica da Clínica Luma Corpore.
+          <div class="card">
+            <h2>👥 Contatos Selecionados (<span id="contact-count">0</span>)</h2>
+            <div class="search-box">
+              <input type="text" id="search-input" placeholder="Buscar por nome ou telefone..." oninput="filterContacts()">
+            </div>
+            <div id="contacts-table" class="contacts-table">
+              <p class="empty-state">Selecione uma tag para carregar contatos</p>
+            </div>
+          </div>
+        </div>
+        <div class="step-actions">
+          <div></div>
+          <button class="btn btn-primary" onclick="goToStep(2)" id="btn-next-1" disabled>
+            Próximo →
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: Mensagem -->
+      <div class="step-content" id="step2">
+        <div class="two-columns">
+          <div class="card">
+            <h2>✍️ Compor Mensagem</h2>
+            <div class="setting" style="margin-bottom: 16px;">
+              <label>🏷️ Título da Campanha (Obrigatório)</label>
+              <input type="text" id="campaign-title" placeholder="Ex: Promoção Vasinhos Maio/26" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+            </div>
+            <p class="hint">Use <code>{NOME}</code> para inserir o nome do contato automaticamente.</p>
+            <textarea id="message-input" rows="10" placeholder="Digite sua mensagem aqui...">🌸 Oi {NOME}! Aqui é a Wanessa, biomédica da Clínica Luma Corpore.
 
 Vi que você se interessou pelo nosso tratamento — e quero te mostrar de pertinho como é o procedimento! 💉✨
 
@@ -97,139 +106,143 @@ Vi que você se interessou pelo nosso tratamento — e quero te mostrar de perti
 
 💬 Depois de assistir, me mande um "oi" aqui mesmo pra eu te contar as condições especiais que estão ativas por tempo limitado. 💖</textarea>
 
-          <div class="upload-area">
-            <label class="upload-btn" for="media-upload">
-              📎 Anexar Foto ou Vídeo (opcional)
-            </label>
-            <input type="file" id="media-upload" accept="image/*,video/*" onchange="handleUpload(this)" hidden>
-            <div id="upload-preview" class="upload-preview"></div>
-          </div>
-
-          <div class="settings-group">
-            <h3>⚙️ Velocidade de envio e IA</h3>
-            <div class="settings-row">
-              <div class="setting" style="flex: 1;">
-                <label>📅 Disparos por Dia</label>
-                <input type="number" id="daily-limit" value="100" min="10">
-                <p class="hint" style="font-size: 11px; margin-top: 4px;">O sistema calcula a pausa ideal para durar das 7h às 22h.</p>
-              </div>
-            </div>
-            <div class="settings-row" style="margin-top: 12px;">
-              <div class="setting" style="flex: 1;">
-                <label>⏸️ Pausar envio a cada (msgs)</label>
-                <select id="pause-batch">
-                  <option value="0">Não pausar</option>
-                  <option value="50">50 mensagens</option>
-                  <option value="100">100 mensagens</option>
-                  <option value="200">200 mensagens</option>
-                </select>
-              </div>
-              <div class="setting" style="flex: 1;">
-                <label>🔄 Voltar a enviar após</label>
-                <select id="pause-duration">
-                  <option value="300">5 minutos</option>
-                  <option value="600">10 minutos</option>
-                  <option value="900">15 minutos</option>
-                  <option value="1800">30 minutos</option>
-                </select>
-              </div>
+            <div class="upload-area">
+              <label class="upload-btn" for="media-upload">
+                📎 Anexar Foto ou Vídeo (opcional)
+              </label>
+              <input type="file" id="media-upload" accept="image/*,video/*" onchange="handleUpload(this)" hidden>
+              <div id="upload-preview" class="upload-preview"></div>
             </div>
 
-            <div class="settings-row" style="margin-top: 16px; align-items: center;">
-              <div class="setting" style="flex: 1;">
-                <label class="toggle-label" style="margin-bottom: 0;">
-                  <input type="checkbox" id="use-ai" checked>
-                  <span class="toggle-slider"></span>
-                  🤖 Usar IA Anti-ban
-                </label>
+            <div class="settings-group">
+              <h3>⚙️ Velocidade de envio e IA</h3>
+              <div class="settings-row">
+                <div class="setting" style="flex: 1;">
+                  <label>📅 Disparos por Dia</label>
+                  <input type="number" id="daily-limit" value="100" min="10">
+                  <p class="hint" style="font-size: 11px; margin-top: 4px;">O sistema calcula a pausa ideal para durar das 7h às 22h.</p>
+                </div>
               </div>
-              <div class="setting" style="flex: 1;">
-                <label>Provedor de IA</label>
-                <select id="ai-provider">
-                  <option value="gemini">Google Gemini</option>
-                  <option value="openai">OpenAI (ChatGPT)</option>
-                </select>
+              <div class="settings-row" style="margin-top: 12px;">
+                <div class="setting" style="flex: 1;">
+                  <label>⏸️ Pausar envio a cada (msgs)</label>
+                  <select id="pause-batch">
+                    <option value="0">Não pausar</option>
+                    <option value="50">50 mensagens</option>
+                    <option value="100">100 mensagens</option>
+                    <option value="200">200 mensagens</option>
+                  </select>
+                </div>
+                <div class="setting" style="flex: 1;">
+                  <label>🔄 Voltar a enviar após</label>
+                  <select id="pause-duration">
+                    <option value="300">5 minutos</option>
+                    <option value="600">10 minutos</option>
+                    <option value="900">15 minutos</option>
+                    <option value="1800">30 minutos</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="settings-row" style="margin-top: 16px; align-items: center;">
+                <div class="setting" style="flex: 1;">
+                  <label class="toggle-label" style="margin-bottom: 0;">
+                    <input type="checkbox" id="use-ai" checked>
+                    <span class="toggle-slider"></span>
+                    🤖 Usar IA Anti-ban
+                  </label>
+                </div>
+                <div class="setting" style="flex: 1;">
+                  <label>Provedor de IA</label>
+                  <select id="ai-provider">
+                    <option value="gemini">Google Gemini</option>
+                    <option value="openai">OpenAI (ChatGPT)</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
+
+          <div class="card preview-card">
+            <h2>📱 Preview</h2>
+            <div class="phone-preview">
+              <div class="chat-bubble" id="preview-bubble">
+                <p>Sua mensagem aparecerá aqui...</p>
+              </div>
+            </div>
+            <p class="hint" style="margin-top:12px">⚡ A IA irá reescrever sutilmente cada mensagem para evitar detecção de spam.</p>
+          </div>
         </div>
 
-        <div class="card preview-card">
-          <h2>📱 Preview</h2>
-          <div class="phone-preview">
-            <div class="chat-bubble" id="preview-bubble">
-              <p>Sua mensagem aparecerá aqui...</p>
+        <div class="step-actions">
+          <button class="btn btn-outline" onclick="goToStep(1)">← Voltar</button>
+          <button class="btn btn-success" onclick="startDispatch()" id="btn-dispatch">
+            🚀 Iniciar Disparo
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: Progresso -->
+      <div class="step-content" id="step3">
+        <div class="progress-header">
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; margin-bottom: 20px;">
+            <div style="font-size: 14px; color: #888; margin-bottom: 8px;">⏰ Hora do Servidor: <span id="server-time" style="font-weight: 600; color: #fff;">--:--:--</span></div>
+            <div id="countdown-container" style="display: none; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); padding: 12px 24px; border-radius: 8px; text-align: center;">
+              <div style="font-size: 12px; color: #3b82f6; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Próximo Envio Em</div>
+              <div id="countdown-timer" style="font-size: 24px; font-weight: 700; color: #3b82f6; font-variant-numeric: tabular-nums;">00:00</div>
             </div>
           </div>
-          <p class="hint" style="margin-top:12px">⚡ A IA irá reescrever sutilmente cada mensagem para evitar detecção de spam.</p>
-        </div>
-      </div>
-
-      <div class="step-actions">
-        <button class="btn btn-outline" onclick="goToStep(1)">← Voltar</button>
-        <button class="btn btn-success" onclick="startDispatch()" id="btn-dispatch">
-          🚀 Iniciar Disparo
-        </button>
-      </div>
-    </div>
-
-    <!-- Step 3: Progresso -->
-    <div class="step-content" id="step3">
-      <div class="progress-header">
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; margin-bottom: 20px;">
-          <div style="font-size: 14px; color: #888; margin-bottom: 8px;">⏰ Hora do Servidor: <span id="server-time" style="font-weight: 600; color: #fff;">--:--:--</span></div>
-          <div id="countdown-container" style="display: none; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); padding: 12px 24px; border-radius: 8px; text-align: center;">
-            <div style="font-size: 12px; color: #3b82f6; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Próximo Envio Em</div>
-            <div id="countdown-timer" style="font-size: 24px; font-weight: 700; color: #3b82f6; font-variant-numeric: tabular-nums;">00:00</div>
+          <div class="progress-ring-container">
+            <svg class="progress-ring" viewBox="0 0 120 120">
+              <circle class="progress-ring-bg" cx="60" cy="60" r="52"></circle>
+              <circle class="progress-ring-fill" id="progress-circle" cx="60" cy="60" r="52"></circle>
+            </svg>
+            <div class="progress-text">
+              <span id="progress-percent">0%</span>
+              <span id="progress-count">0 / 0</span>
+            </div>
+          </div>
+          <div id="report-container" style="display: none; margin-left: auto;">
+              <a id="btn-download-report" class="btn btn-primary" href="#" target="_blank" download>📄 Baixar Relatório PDF</a>
           </div>
         </div>
-        <div class="progress-ring-container">
-          <svg class="progress-ring" viewBox="0 0 120 120">
-            <circle class="progress-ring-bg" cx="60" cy="60" r="52"></circle>
-            <circle class="progress-ring-fill" id="progress-circle" cx="60" cy="60" r="52"></circle>
-          </svg>
-          <div class="progress-text">
-            <span id="progress-percent">0%</span>
-            <span id="progress-count">0 / 0</span>
+
+        <div class="stats-row">
+          <div class="stat-card stat-sent">
+            <span class="stat-number" id="stat-sent">0</span>
+            <span class="stat-label">✅ Enviados</span>
+          </div>
+          <div class="stat-card stat-pending">
+            <span class="stat-number" id="stat-pending">0</span>
+            <span class="stat-label">⏳ Pendentes</span>
+          </div>
+          <div class="stat-card stat-error">
+            <span class="stat-number" id="stat-errors">0</span>
+            <span class="stat-label">❌ Erros</span>
           </div>
         </div>
-        <div id="report-container" style="display: none; margin-left: auto;">
-            <a id="btn-download-report" class="btn btn-primary" href="#" target="_blank" download>📄 Baixar Relatório PDF</a>
+
+        <div class="card log-card">
+          <h2>📜 Log de Envios</h2>
+          <div id="dispatch-log" class="dispatch-log"></div>
+        </div>
+
+        <div class="step-actions">
+          <button class="btn btn-warning" id="btn-pause" onclick="togglePause()">⏸️ Pausar</button>
+          <button class="btn btn-danger" id="btn-cancel" onclick="cancelDispatch()">🛑 Cancelar</button>
+          <button class="btn btn-primary" id="btn-new" onclick="resetAll()" style="display:none">🔄 Novo Disparo</button>
         </div>
       </div>
 
-      <div class="stats-row">
-        <div class="stat-card stat-sent">
-          <span class="stat-number" id="stat-sent">0</span>
-          <span class="stat-label">✅ Enviados</span>
-        </div>
-        <div class="stat-card stat-pending">
-          <span class="stat-number" id="stat-pending">0</span>
-          <span class="stat-label">⏳ Pendentes</span>
-        </div>
-        <div class="stat-card stat-error">
-          <span class="stat-number" id="stat-errors">0</span>
-          <span class="stat-label">❌ Erros</span>
-        </div>
-      </div>
+    </div><!-- End Tab Dispatch -->
 
-      <div class="card log-card">
-        <h2>📜 Log de Envios</h2>
-        <div id="dispatch-log" class="dispatch-log"></div>
-      </div>
-
-      <div class="step-actions">
-        <button class="btn btn-warning" id="btn-pause" onclick="togglePause()">⏸️ Pausar</button>
-        <button class="btn btn-danger" id="btn-cancel" onclick="cancelDispatch()">🛑 Cancelar</button>
-        <button class="btn btn-primary" id="btn-new" onclick="resetAll()" style="display:none">🔄 Novo Disparo</button>
-      </div>
-    </div> <!-- End Tab Dispatch -->
-
-    <!-- Tab: History -->
+    <!-- ======================== -->
+    <!-- TAB: HISTÓRICO            -->
+    <!-- ======================== -->
     <div id="tab-history" class="tab-pane">
       <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <h2 style="margin:0">📜 Histórico de Execuções</h2>
+        <div class="history-header">
+          <h2>📜 Histórico de Execuções</h2>
           <button class="btn btn-outline" onclick="loadHistory()">🔄 Atualizar</button>
         </div>
         <div class="history-table-container">
@@ -245,30 +258,27 @@ Vi que você se interessou pelo nosso tratamento — e quero te mostrar de perti
               </tr>
             </thead>
             <tbody id="history-body">
-              <!-- Preenchido via JS -->
+              <tr><td colspan="6" class="empty-state">Clique em "Histórico" para carregar</td></tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
 
+  </div><!-- End .app -->
+
   <!-- Login Overlay -->
-  <div id="login-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0b0e14; display: flex; align-items: center; justify-content: center; z-index: 9999;">
-    <div style="background: #161b22; padding: 40px; border-radius: 16px; border: 1px solid #30363d; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
-      <div style="font-size: 40px; margin-bottom: 20px;">🔒</div>
-      <h2 style="color: #fff; margin-bottom: 10px; font-weight: 700;">Área Restrita</h2>
-      <p style="color: #8b949e; margin-bottom: 30px; font-size: 14px;">Para acessar o disparador Luma Corpore, digite a senha mestra.</p>
-      
-      <div style="margin-bottom: 20px; text-align: left;">
-        <label style="display: block; color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Senha Mestra</label>
-        <input type="password" id="app-password" placeholder="••••••••" style="width: 100%; background: #0d1117; border: 1px solid #30363d; padding: 12px 16px; border-radius: 8px; color: #fff; font-size: 16px; outline: none; transition: border-color 0.2s;">
+  <div id="login-overlay" class="login-overlay">
+    <div class="login-card">
+      <div class="login-icon">🔒</div>
+      <h2>Área Restrita</h2>
+      <p>Para acessar o disparador Luma Corpore, digite a senha mestra.</p>
+      <div class="login-field">
+        <label>Senha Mestra</label>
+        <input type="password" id="app-password" placeholder="••••••••">
       </div>
-      
-      <button id="btn-login" style="width: 100%; background: #3b82f6; color: #fff; border: none; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
-        Acessar Painel
-      </button>
-      
-      <p id="login-error" style="color: #f85149; font-size: 13px; margin-top: 15px; display: none;">Senha incorreta. Tente novamente.</p>
+      <button id="btn-login" class="login-btn">Acessar Painel</button>
+      <p id="login-error" class="login-error">Senha incorreta. Tente novamente.</p>
     </div>
   </div>
 
