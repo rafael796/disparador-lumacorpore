@@ -178,7 +178,8 @@ REGRAS:
 4. Mantenha tom profissional
 5. Retorne APENAS a mensagem reescrita, sem explicações
 6. Use apenas o primeiro nome
-7. Não altere nomes próprios (Wanessa, Luma Corpore)` },
+7. Não altere nomes próprios (Wanessa, Luma Corpore)
+8. CRÍTICO: MANTENHA INTACTA QUALQUER formatação do WhatsApp! Não remova os asteriscos de negrito (*texto*), os sublinhados de itálico (_texto_) nem os tis de riscado (~texto~). Se houver uma palavra formatada como *exemplo*, ela DEVE continuar como *exemplo* ou o sinônimo escolhido DEVE estar entre os mesmos asteriscos.` },
           { role: 'user', content: `Reescreva esta mensagem:\n\n${text}` }
         ]
       })
@@ -231,7 +232,8 @@ REGRAS:
 4. Mantenha tom profissional
 5. Retorne APENAS a mensagem reescrita, sem explicações
 6. Use apenas o primeiro nome
-7. Não altere nomes próprios (Wanessa, Luma Corpore)` }]
+7. Não altere nomes próprios (Wanessa, Luma Corpore)
+8. CRÍTICO: MANTENHA INTACTA QUALQUER formatação do WhatsApp! Não remova os asteriscos de negrito (*texto*), os sublinhados de itálico (_texto_) nem os tis de riscado (~texto~). Se houver uma palavra formatada como *exemplo*, ela DEVE continuar como *exemplo* ou o sinônimo escolhido DEVE estar entre os mesmos asteriscos.` }]
         },
         contents: [{ parts: [{ text: `Reescreva esta mensagem:\n\n${text}` }] }],
         generationConfig: {
@@ -646,8 +648,21 @@ async function runDispatch(id) {
     const hoje = new Date().toISOString().split('T')[0];
 
     try {
+      // Extrair primeiro nome real (ignorar se for número de telefone)
+      let firstName = contact.name || '';
+      if (firstName.includes(' ')) firstName = firstName.split(' ')[0];
+      if (firstName === contact.phone_number || firstName.startsWith('+') || /^[0-9]+$/.test(firstName)) {
+        firstName = '';
+      }
+
       // Preparar mensagem
-      let finalMessage = d.message.replace(/\{NOME\}/g, contact.first_name);
+      let finalMessage = d.message;
+      if (firstName) {
+        finalMessage = finalMessage.replace(/\{NOME\}/g, firstName);
+      } else {
+        // Se não tem nome, remove a tag e limpa espaços ou vírgulas órfãs
+        finalMessage = finalMessage.replace(/\s*\{NOME\}\s*,?\s*/g, ' ').trim();
+      }
 
       // IA
       if (d.useAI) {
