@@ -74,6 +74,48 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+// === NAVIGATION ===
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
+  
+  document.getElementById(`tab-${tabId}`).classList.add('active');
+  const activeLink = Array.from(document.querySelectorAll('.tab-link')).find(l => l.innerText.toLowerCase().includes(tabId === 'dispatch' ? 'novo' : 'hist'));
+  if (activeLink) activeLink.classList.add('active');
+  
+  if (tabId === 'history') loadHistory();
+}
+
+async function loadHistory() {
+  const body = document.getElementById('history-body');
+  body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px"><div class="loading-spinner" style="margin:0 auto"></div></td></tr>';
+  
+  try {
+    const resp = await authorizedFetch('/api/history');
+    const history = await resp.json();
+    
+    if (history.length === 0) {
+      body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted)">Nenhum histórico encontrado</td></tr>';
+      return;
+    }
+    
+    body.innerHTML = history.map(h => `
+      <tr>
+        <td>${new Date(h.startedAt).toLocaleString('pt-BR')}</td>
+        <td>${h.title || 'Campanha'}</td>
+        <td><span class="status-badge status-${h.status}">${h.status}</span></td>
+        <td style="color:var(--success)">${h.sent}</td>
+        <td style="color:var(--danger)">${h.errors}</td>
+        <td>
+          ${h.pdfReport ? `<a href="/api/reports/${h.pdfReport}" class="btn btn-outline" style="padding:4px 8px;font-size:11px">📥 PDF</a>` : '-'}
+        </td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--danger)">Erro ao carregar histórico</td></tr>';
+  }
+}
+
 // === TAGS ===
 async function loadTags() {
   const container = document.getElementById('tags-list');
@@ -185,16 +227,30 @@ function renderContacts(contacts) {
     return;
   }
 
-  table.innerHTML = contacts.slice(0, 200).map(c => `
+  table.innerHTML = contacts.slice(0, 300).map(c => `
     <div class="contact-row">
-      <span class="contact-name">${c.name || 'Sem nome'}</span>
-      <span class="contact-phone">${c.phone_number}</span>
+      <div style="display:flex; flex-direction:column;">
+        <span class="contact-name">${c.name || 'Sem nome'}</span>
+        <span style="font-size:10px; color:var(--text-muted)">Último envio: ${c.last_dispatch || 'Nunca'}</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span class="contact-phone">${c.phone_number}</span>
+        <button onclick="removeContact(${c.id})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px; padding:4px;" title="Remover da lista">
+          🗑️
+        </button>
+      </div>
     </div>
   `).join('');
 
-  if (contacts.length > 200) {
-    table.innerHTML += `<p class="empty-state">... e mais ${contacts.length - 200} contatos</p>`;
+  if (contacts.length > 300) {
+    table.innerHTML += `<p class="empty-state">... e mais ${contacts.length - 300} contatos</p>`;
   }
+}
+
+function removeContact(id) {
+  selectedContacts = selectedContacts.filter(c => c.id != id);
+  allLoadedContacts = allLoadedContacts.filter(c => c.id != id);
+  renderContacts(selectedContacts);
 }
 
 function filterContacts() {

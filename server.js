@@ -20,6 +20,38 @@ const upload = multer({ dest: uploadsDir, limits: { fileSize: 40 * 1024 * 1024 }
 // State
 const dispatches = {};
 const { CHATWOOT_TOKEN, CHATWOOT_URL, INBOX_ID, APP_PASSWORD = 'luma' } = process.env;
+const historyFile = path.join(uploadsDir, 'history.json');
+
+// --- HISTORY HELPERS ---
+function loadHistory() {
+  if (fs.existsSync(historyFile)) {
+    try {
+      return JSON.parse(fs.readFileSync(historyFile, 'utf8'));
+    } catch (e) {
+      return [];
+    }
+  }
+  return [];
+}
+
+function saveHistory(history) {
+  fs.writeFileSync(historyFile, JSON.stringify(history, null, 2));
+}
+
+function updateHistory(dispatchId, data) {
+  const history = loadHistory();
+  const index = history.findIndex(h => h.id === dispatchId);
+  if (index !== -1) {
+    history[index] = { ...history[index], ...data };
+    saveHistory(history);
+  }
+}
+
+function addToHistory(entry) {
+  const history = loadHistory();
+  history.unshift(entry); // Mais novos primeiro
+  saveHistory(history.slice(0, 100)); // Limite de 100 registros
+}
 
 // Middleware de Autenticação para API
 const authMiddleware = (req, res, next) => {
@@ -45,6 +77,20 @@ app.post('/api/login', (req, res) => {
     res.json({ success: true, token: APP_PASSWORD });
   } else {
     res.status(401).json({ error: 'Senha incorreta' });
+  }
+});
+
+// --- ROUTES ---
+app.get('/api/history', (req, res) => {
+  res.json(loadHistory());
+});
+
+app.get('/api/reports/:filename', (req, res) => {
+  const filePath = path.join(uploadsDir, req.params.filename);
+  if (fs.existsSync(filePath)) {
+    res.download(filePath);
+  } else {
+    res.status(404).send('Relatório não encontrado');
   }
 });
 
@@ -259,6 +305,37 @@ function calculateDelay(dailyLimit, sentToday) {
   return Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
 }
 
+// --- HELPERS (PDF) ---
+function generatePDFReport(d) {
+  return new Promise((resolve) => {
+    const fileName = `report_${d.id}.pdf`;
+    const filePath = path.join(uploadsDir, fileName);
+    const doc = new PDFDocument();
+    const stream = fs.createWriteStream(filePath);
+    
+    doc.pipe(stream);
+    doc.fontSize(20).text('Relatório de Disparo - Luma Corpore', { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(12).text(`ID da Campanha: ${d.id}`);
+    doc.text(`Título: ${d.title || 'S/T'}`);
+    doc.text(`Data: ${new Date(d.startedAt).toLocaleString('pt-BR')}`);
+    doc.text(`Total de Contatos: ${d.total}`);
+    doc.text(`Enviados com Sucesso: ${d.sent}`);
+    doc.text(`Erros: ${d.errors}`);
+    doc.text(`Status Final: ${d.status}`);
+    doc.moveDown();
+    doc.text('--- Log Detalhado ---');
+    doc.moveDown();
+    
+    d.log.forEach(l => {
+      doc.fontSize(8).text(`[${l.time}] ${l.contact} (${l.phone}) - ${l.status.toUpperCase()}: ${l.message}`);
+    });
+    
+    doc.end();
+    stream.on('finish', () => resolve(fileName));
+  });
+}
+
 // --- ROTAS API ---
 
 // Listar labels
@@ -314,7 +391,8 @@ app.post('/api/contacts', async (req, res) => {
       id: c.id,
       name: c.name || '',
       phone_number: c.phone_number || '',
-      first_name: (c.name || '').split(' ')[0] || 'cliente'
+      first_name: (c.name || '').split(' ')[0] || 'cliente',
+      last_dispatch: c.custom_attributes?.ultimo_disparo || 'Nunca'
     }));
 
     res.json({
@@ -379,6 +457,16 @@ app.post('/api/dispatch', (req, res) => {
   };
 
   // Roda o disparo em background
+  addToHistory({
+    id,
+    title: d.title,
+    startedAt: d.startedAt,
+    total: d.total,
+    status: 'running',
+    sent: 0,
+    errors: 0
+  });
+
   runDispatch(id);
   res.json({ dispatchId: id });
 });
@@ -606,8 +694,22 @@ async function runDispatch(id) {
     }
   }
 
-  if (!d.cancelled) d.status = 'done';
-  d.finishedAt = new Date().toISOString();
+    if (!d.cancelled) d.status = 'done';
+    d.finishedAt = new Date().toISOString();
+    
+    // Gerar PDF e salvar histórico
+    const pdfName = await generatePDFReport(d);
+    updateHistory(id, { 
+      status: d.status, 
+      sent: d.sent, 
+      errors: d.errors, 
+      finishedAt: d.finishedAt,
+      pdfReport: pdfName 
+    });
+  } catch (err) {
+    console.error('Erro fatal no ciclo de disparos:', err);
+    updateHistory(id, { status: 'fatal_error', errorMsg: err.message });
+  }
 }
 
 // --- START ---
