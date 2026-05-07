@@ -464,6 +464,7 @@ app.post('/api/dispatch', (req, res) => {
     paused: false,
     cancelled: false
   };
+  const d = dispatches[id];
 
   // Roda o disparo em background
   addToHistory({
