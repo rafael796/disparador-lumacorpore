@@ -19,7 +19,34 @@ const upload = multer({ dest: uploadsDir, limits: { fileSize: 40 * 1024 * 1024 }
 
 // State
 const dispatches = {};
-const { CHATWOOT_TOKEN, CHATWOOT_URL, INBOX_ID } = process.env;
+const { CHATWOOT_TOKEN, CHATWOOT_URL, INBOX_ID, APP_PASSWORD = 'luma' } = process.env;
+
+// Middleware de Autenticação para API
+const authMiddleware = (req, res, next) => {
+  // Ignora rotas que não sejam da API ou a rota de login
+  if (!req.path.startsWith('/api') || req.path === '/api/login') {
+    return next();
+  }
+  
+  const authHeader = req.headers['authorization'];
+  if (authHeader === APP_PASSWORD) {
+    return next();
+  }
+  
+  res.status(401).json({ error: 'Não autorizado' });
+};
+
+app.use(authMiddleware);
+
+// Rota de Login
+app.post('/api/login', (req, res) => {
+  const { password } = req.body;
+  if (password === APP_PASSWORD) {
+    res.json({ success: true, token: APP_PASSWORD });
+  } else {
+    res.status(401).json({ error: 'Senha incorreta' });
+  }
+});
 
 // --- HELPERS ---
 async function chatwootGet(endpoint) {

@@ -6,14 +6,79 @@ let dispatchId = null;
 let eventSource = null;
 let uploadedMediaId = null;
 
+// === AUTH ===
+let authToken = localStorage.getItem('luma_auth_token');
+
+async function authorizedFetch(url, options = {}) {
+  if (!options.headers) options.headers = {};
+  if (authToken) {
+    options.headers['Authorization'] = authToken;
+  }
+  
+  const resp = await fetch(url, options);
+  if (resp.status === 401 && url !== '/api/login') {
+    showLogin();
+  }
+  return resp;
+}
+
+function showLogin() {
+  document.getElementById('login-overlay').style.display = 'flex';
+}
+
+function hideLogin() {
+  document.getElementById('login-overlay').style.display = 'none';
+}
+
 // === INIT ===
-document.addEventListener('DOMContentLoaded', loadTags);
+document.addEventListener('DOMContentLoaded', () => {
+  if (!authToken) {
+    showLogin();
+  } else {
+    hideLogin();
+    loadTags();
+  }
+  
+  // Login Handler
+  document.getElementById('btn-login').addEventListener('click', async () => {
+    const password = document.getElementById('app-password').value;
+    const btn = document.getElementById('btn-login');
+    const error = document.getElementById('login-error');
+    
+    btn.disabled = true;
+    btn.textContent = 'Verificando...';
+    error.style.display = 'none';
+    
+    try {
+      const resp = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+      
+      if (resp.ok) {
+        const data = await resp.json();
+        authToken = data.token;
+        localStorage.setItem('luma_auth_token', authToken);
+        hideLogin();
+        loadTags();
+      } else {
+        error.style.display = 'block';
+      }
+    } catch (e) {
+      alert('Erro de conexão com o servidor');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Acessar Painel';
+    }
+  });
+});
 
 // === TAGS ===
 async function loadTags() {
   const container = document.getElementById('tags-list');
   try {
-    const resp = await fetch('/api/tags');
+    const resp = await authorizedFetch('/api/tags');
     const tags = await resp.json();
     container.innerHTML = tags.map(t => `
       <button class="tag-chip" onclick="selectTag('${t.title}', this)" style="border-left: 3px solid ${t.color || '#10b981'}">
@@ -78,7 +143,7 @@ async function loadContactsByTag(tag) {
 
   try {
     while (hasMore) {
-      const resp = await fetch('/api/contacts', {
+      const resp = await authorizedFetch('/api/contacts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tag, startPage: page }),
@@ -184,7 +249,7 @@ async function handleUpload(input) {
   formData.append('media', file);
 
   try {
-    const resp = await fetch('/api/upload', { method: 'POST', body: formData });
+    const resp = await authorizedFetch('/api/upload', { method: 'POST', body: formData });
     const data = await resp.json();
     uploadedMediaId = data.id;
     preview.innerHTML = `✅ ${data.originalName} (${(data.size / 1024 / 1024).toFixed(1)}MB)`;
@@ -220,7 +285,7 @@ async function startDispatch() {
   document.getElementById('btn-new').style.display = 'none';
 
   try {
-    const resp = await fetch('/api/dispatch', {
+    const resp = await authorizedFetch('/api/dispatch', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -346,13 +411,13 @@ function updateProgress(d) {
 
 async function togglePause() {
   if (!dispatchId) return;
-  await fetch(`/api/dispatch/${dispatchId}/pause`, { method: 'POST' });
+  await authorizedFetch(`/api/dispatch/${dispatchId}/pause`, { method: 'POST' });
 }
 
 async function cancelDispatch() {
   if (!dispatchId) return;
   if (!confirm('Tem certeza que deseja cancelar?')) return;
-  await fetch(`/api/dispatch/${dispatchId}/cancel`, { method: 'POST' });
+  await authorizedFetch(`/api/dispatch/${dispatchId}/cancel`, { method: 'POST' });
 }
 
 function resetAll() {
