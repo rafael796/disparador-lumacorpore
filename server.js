@@ -416,6 +416,18 @@ app.post('/api/contacts', async (req, res) => {
       last_dispatch: c.custom_attributes?.ultimo_disparo || 'Nunca'
     }));
 
+    // Ordenação inteligente: 
+    // 1. Quem "Nunca" recebeu (prioridade máxima)
+    // 2. Por data (mais antigos primeiro)
+    mappedContacts.sort((a, b) => {
+      if (a.last_dispatch === 'Nunca' && b.last_dispatch !== 'Nunca') return -1;
+      if (a.last_dispatch !== 'Nunca' && b.last_dispatch === 'Nunca') return 1;
+      if (a.last_dispatch === 'Nunca' && b.last_dispatch === 'Nunca') return 0;
+      
+      // Comparar datas (formato ISO YYYY-MM-DD)
+      return a.last_dispatch.localeCompare(b.last_dispatch);
+    });
+
     res.json({
       contacts: mappedContacts,
       hasMore,
