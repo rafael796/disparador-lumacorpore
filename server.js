@@ -372,6 +372,22 @@ app.get('/api/tags', async (req, res) => {
   }
 });
 
+// Obter status de um disparo específico (para recuperação após F5)
+app.get('/api/dispatch/:id', (req, res) => {
+  const d = dispatches[req.params.id];
+  if (!d) return res.status(404).json({ error: 'Disparo não encontrado' });
+  res.json({
+    id: d.id,
+    title: d.title,
+    status: d.status,
+    sent: d.sent,
+    errors: d.errors,
+    total: d.total,
+    paused: d.paused,
+    cancelled: d.cancelled
+  });
+});
+
 // Buscar contatos por tag (chunks de ~250 contatos para o frontend)
 app.post('/api/contacts', async (req, res) => {
   try {
@@ -694,7 +710,28 @@ async function runDispatch(id) {
         finalMessage = await rewriteWithAI(finalMessage, d.aiProvider);
       }
 
-      // Enviar
+      // 1. Simular "Leitura" (Update Last Seen)
+      try {
+        // Precisamos do ID da conversa. Se não existir, o Chatwoot cria no POST do message, 
+        // mas aqui tentamos buscar uma existente para marcar como lida primeiro.
+        const searchConv = await chatwootGet(`/contacts/${contact.id}/conversations`);
+        if (searchConv && searchConv.payload && searchConv.payload.length > 0) {
+          const convId = searchConv.payload[0].id;
+          await chatwootPost(`/conversations/${convId}/update_last_seen`, {});
+        }
+      } catch (e) {}
+
+      // 2. Simular "Digitação" (Baseado no tamanho do texto)
+      // Média humana: 200 caracteres por minuto (~3.3 chars/seg)
+      const typingSpeed = 3.3; 
+      let typingSeconds = Math.floor(finalMessage.length / typingSpeed);
+      // Limites de segurança para não ficar artificial (entre 3 e 15 segundos)
+      typingSeconds = Math.min(Math.max(typingSeconds, 3), 15);
+      
+      d.log.push({ time: timestamp, contact: contact.name, phone: contact.phone_number, status: 'typing', message: `Simulando digitação (${typingSeconds}s)...` });
+      await sleep(typingSeconds * 1000);
+
+      // 3. Enviar a mensagem real
       const convResult = await chatwootPost('/conversations', {
         contact_id: contact.id,
         inbox_id: inboxId,

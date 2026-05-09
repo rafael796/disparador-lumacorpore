@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       localStorage.setItem('luma_auth_token', authToken);
       hideLogin();
       loadTags();
+      restoreActiveDispatch();
       return;
     }
   } catch (e) {}
@@ -63,6 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (test.ok) {
         hideLogin();
         loadTags();
+        restoreActiveDispatch();
         return;
       }
     } catch (e) {}
@@ -96,6 +98,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         localStorage.setItem('luma_auth_token', authToken);
         hideLogin();
         loadTags();
+        restoreActiveDispatch();
       } else {
         error.style.display = 'block';
       }
@@ -401,6 +404,7 @@ async function startDispatch() {
     });
     const data = await resp.json();
     dispatchId = data.dispatchId;
+    localStorage.setItem('luma_active_dispatch_id', dispatchId);
     startProgressStream();
   } catch (e) {
     alert('Erro ao iniciar disparo: ' + e.message);
@@ -493,6 +497,7 @@ function updateProgress(d) {
 
   // Done
   if (d.status === 'done' || d.status === 'cancelled') {
+    localStorage.removeItem('luma_active_dispatch_id');
     if (eventSource) eventSource.close();
     if (window._countdownInterval) clearInterval(window._countdownInterval);
     document.getElementById('countdown-container').style.display = 'none';
@@ -506,6 +511,29 @@ function updateProgress(d) {
       document.getElementById('report-container').style.display = 'block';
       document.getElementById('btn-download-report').href = `/api/dispatch/${dispatchId}/report${authToken ? '?token=' + authToken : ''}`;
     }
+  }
+}
+
+async function restoreActiveDispatch() {
+  const activeId = localStorage.getItem('luma_active_dispatch_id');
+  if (!activeId) return;
+
+  try {
+    const resp = await authorizedFetch(`/api/dispatch/${activeId}`);
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.status === 'running' || data.status === 'paused') {
+        dispatchId = activeId;
+        goToStep(3);
+        startProgressStream();
+      } else {
+        localStorage.removeItem('luma_active_dispatch_id');
+      }
+    } else {
+      localStorage.removeItem('luma_active_dispatch_id');
+    }
+  } catch (e) {
+    console.error('Erro ao restaurar disparo:', e);
   }
 }
 
