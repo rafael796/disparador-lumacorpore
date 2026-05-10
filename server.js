@@ -318,10 +318,9 @@ function calculateDelay(dailyLimit, sentToday) {
   
   const baseDelay = Math.floor(secondsLeft / remainingToday);
   
-  // TRAVA DE SEGURANÇA MÁXIMA: Mínimo de 25 minutos (1500 segundos)
-  // Adicionamos uma variância extra de 0 a 5 minutos (300 seg) para humanizar
-  const safetyMin = 1500; 
-  const randomExtra = Math.floor(Math.random() * 300); 
+  // TRAVA DE SEGURANÇA: Entre 17 minutos (1020s) e 25 minutos (1500s)
+  const safetyMin = 1020; 
+  const randomExtra = Math.floor(Math.random() * 480); // 480s = 8 minutos de variação
 
   // O delay será o maior entre o cálculo sugerido e a nossa trava de segurança
   const finalDelay = Math.max(safetyMin + randomExtra, baseDelay);
