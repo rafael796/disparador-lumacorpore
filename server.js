@@ -316,16 +316,12 @@ function calculateDelay(dailyLimit, sentToday) {
   const secondsLeft = hoursLeft * 3600;
   const remainingToday = dailyLimit - sentToday;
   
-  const baseDelay = Math.floor(secondsLeft / remainingToday);
-  
-  // TRAVA DE SEGURANÇA: Entre 17 minutos (1020s) e 25 minutos (1500s)
+  // TRAVA FIXA: Entre 17 minutos (1020s) e 25 minutos (1500s)
+  // Ignoramos o baseDelay para garantir que nunca ultrapasse o pedido do usuário
   const safetyMin = 1020; 
-  const randomExtra = Math.floor(Math.random() * 480); // 480s = 8 minutos de variação
+  const randomExtra = Math.floor(Math.random() * 480); // + 8 minutos de variação
 
-  // O delay será o maior entre o cálculo sugerido e a nossa trava de segurança
-  const finalDelay = Math.max(safetyMin + randomExtra, baseDelay);
-  
-  return finalDelay;
+  return safetyMin + randomExtra;
 }
 
 // --- HELPERS (PDF) ---
