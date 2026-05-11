@@ -146,7 +146,7 @@ async function loadHistory() {
         <td>
           <div style="display:flex; gap: 4px;">
             ${h.pdfReport ? `<a href="/api/reports/${h.pdfReport}${authToken ? '?token=' + authToken : ''}" class="btn btn-outline" style="padding:4px 8px;font-size:11px" target="_blank">📥 PDF</a>` : ''}
-            ${h.status === 'running' ? `<button onclick="cancelHistoryDispatch('${h.id}')" class="btn btn-outline" style="padding:4px 8px;font-size:11px;color:var(--danger);border-color:var(--danger)">✕ Parar</button>` : ''}
+            ${(h.status && h.status.toLowerCase() === 'running') ? `<button onclick="cancelHistoryDispatch('${h.id}')" class="btn btn-outline" style="padding:4px 8px;font-size:11px;color:var(--danger);border-color:var(--danger)">✕ Parar</button>` : ''}
           </div>
         </td>
       </tr>
