@@ -144,12 +144,28 @@ async function loadHistory() {
         <td style="color:var(--success)">${h.sent}</td>
         <td style="color:var(--danger)">${h.errors}</td>
         <td>
-          ${h.pdfReport ? `<a href="/api/reports/${h.pdfReport}${authToken ? '?token=' + authToken : ''}" class="btn btn-outline" style="padding:4px 8px;font-size:11px" target="_blank">📥 PDF</a>` : '-'}
+          <div style="display:flex; gap: 4px;">
+            ${h.pdfReport ? `<a href="/api/reports/${h.pdfReport}${authToken ? '?token=' + authToken : ''}" class="btn btn-outline" style="padding:4px 8px;font-size:11px" target="_blank">📥 PDF</a>` : ''}
+            ${h.status === 'running' ? `<button onclick="cancelHistoryDispatch('${h.id}')" class="btn btn-outline" style="padding:4px 8px;font-size:11px;color:var(--danger);border-color:var(--danger)">✕ Parar</button>` : ''}
+          </div>
         </td>
       </tr>
     `).join('');
   } catch (e) {
     body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--danger)">Erro ao carregar histórico</td></tr>';
+  }
+}
+
+async function cancelHistoryDispatch(id) {
+  if (!confirm('Deseja realmente forçar a parada deste disparo zumbi?')) return;
+  
+  try {
+    const resp = await authorizedFetch(`/api/history/${id}/cancel`, { method: 'POST' });
+    if (resp.ok) {
+      loadHistory(); // Recarrega a tabela
+    }
+  } catch (e) {
+    alert('Erro ao cancelar: ' + e.message);
   }
 }
 

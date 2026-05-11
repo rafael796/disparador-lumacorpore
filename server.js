@@ -383,6 +383,18 @@ app.get('/api/dispatch/:id', (req, res) => {
   });
 });
 
+// Forçar cancelamento de um disparo no histórico (Zumbis)
+app.post('/api/history/:id/cancel', (req, res) => {
+  const id = req.params.id;
+  updateHistory(id, { status: 'cancelled' });
+  // Se estiver rodando na memória, cancela também
+  if (dispatches[id]) {
+    dispatches[id].cancelled = true;
+    dispatches[id].status = 'cancelled';
+  }
+  res.json({ success: true });
+});
+
 // Buscar contatos por tag (chunks de ~250 contatos para o frontend)
 app.post('/api/contacts', async (req, res) => {
   try {
