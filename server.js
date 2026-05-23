@@ -67,7 +67,7 @@ if (AUTH_ENABLED) {
 // Middleware de Autenticação para API
 const authMiddleware = (req, res, next) => {
   if (!AUTH_ENABLED) return next();
-  if (!req.path.startsWith('/api') || req.path === '/api/login') return next();
+  if (!req.path.startsWith('/api') || req.path === '/api/login' || req.path === '/api/version') return next();
   
   // SSE usa query params pq EventSource não suporta custom headers
   const token = req.headers['authorization'] || req.query.token;

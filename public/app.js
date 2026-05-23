@@ -48,6 +48,9 @@ async function loadVersion() {
 
 // === INIT ===
 document.addEventListener('DOMContentLoaded', async () => {
+  // Carrega versão imediatamente (rota pública)
+  loadVersion();
+  
   // Tenta login automático (detecta se servidor exige senha)
   try {
     const resp = await fetch('/api/login', {
