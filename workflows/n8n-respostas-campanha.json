@@ -1,0 +1,316 @@
+{
+  "name": "Luma Corpore - Respostas Campanha",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatwoot-respostas",
+        "responseMode": "onReceived",
+        "responseData": "allEntries"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Chatwoot",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.message_type }}",
+              "operation": "equals",
+              "value2": "incoming"
+            }
+          ]
+        }
+      },
+      "id": "filter-incoming",
+      "name": "É mensagem do cliente?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "rules": [
+            {
+              "value2": "1",
+              "operation": "equals"
+            },
+            {
+              "value2": "2",
+              "operation": "equals"
+            }
+          ]
+        },
+        "value1": "={{ $json.content.trim() }}",
+        "fallbackOutput": "extra"
+      },
+      "id": "switch-resposta",
+      "name": "Qual resposta?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://www.googleapis.com/drive/v3/files",
+        "authentication": "oAuth2",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "'SEU_FOLDER_ID_AQUI' in parents and trashed=false"
+            },
+            {
+              "name": "fields",
+              "value": "files(id,name,mimeType,webContentLink)"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "drive-listar",
+      "name": "Listar Arquivos Drive",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [910, 180],
+      "credentials": {
+        "oAuth2Api": {
+          "id": "GOOGLE_OAUTH_CREDENTIAL_ID",
+          "name": "Google OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://chatwoot-oracle.lumacorpore.com.br/api/v1/accounts/1/conversations/{{ $json.conversation.id }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "gWKmEkU6VN8oqnXy1aqReARV"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "🎉 Que ótimo! Aqui estão as nossas promoções especiais para você! 💖\n\nConfira os detalhes abaixo e me avise se tiver alguma dúvida! 😊"
+            },
+            {
+              "name": "message_type",
+              "value": "outgoing"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "enviar-promo-texto",
+      "name": "Enviar Texto Promo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1130, 180]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://chatwoot-oracle.lumacorpore.com.br/api/v1/accounts/1/conversations/{{ $('Webhook Chatwoot').item.json.conversation.id }}/labels",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "gWKmEkU6VN8oqnXy1aqReARV"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"labels\": {{ JSON.stringify([...(($('Webhook Chatwoot').item.json.conversation.labels) || []), 'optout']) }} }",
+        "options": {}
+      },
+      "id": "add-tag-optout-conv",
+      "name": "Tag optout (Conversa)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [910, 420]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://chatwoot-oracle.lumacorpore.com.br/api/v1/accounts/1/contacts/{{ $('Webhook Chatwoot').item.json.sender.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "gWKmEkU6VN8oqnXy1aqReARV"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{ \"custom_attributes\": { \"optout\": true, \"optout_data\": \"{{ new Date().toISOString().split('T')[0] }}\" } }",
+        "options": {}
+      },
+      "id": "update-contact-optout",
+      "name": "Marcar Contato Optout",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1130, 420]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://chatwoot-oracle.lumacorpore.com.br/api/v1/accounts/1/conversations/{{ $('Webhook Chatwoot').item.json.conversation.id }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "gWKmEkU6VN8oqnXy1aqReARV"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "Entendido! Você foi removido(a) da nossa lista de promoções. Se mudar de ideia, é só nos enviar uma mensagem. 💛"
+            },
+            {
+              "name": "message_type",
+              "value": "outgoing"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "enviar-msg-optout",
+      "name": "Confirmar Opt-out",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1350, 420]
+    },
+    {
+      "parameters": {},
+      "id": "noop-ignorar",
+      "name": "Ignorar (Humano responde)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [910, 560]
+    }
+  ],
+  "connections": {
+    "Webhook Chatwoot": {
+      "main": [
+        [
+          {
+            "node": "É mensagem do cliente?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "É mensagem do cliente?": {
+      "main": [
+        [
+          {
+            "node": "Qual resposta?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qual resposta?": {
+      "main": [
+        [
+          {
+            "node": "Listar Arquivos Drive",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tag optout (Conversa)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ignorar (Humano responde)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar Arquivos Drive": {
+      "main": [
+        [
+          {
+            "node": "Enviar Texto Promo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag optout (Conversa)": {
+      "main": [
+        [
+          {
+            "node": "Marcar Contato Optout",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar Contato Optout": {
+      "main": [
+        [
+          {
+            "node": "Confirmar Opt-out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
