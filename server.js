@@ -398,7 +398,7 @@ app.post('/api/history/:id/cancel', (req, res) => {
 app.post('/api/contacts', async (req, res) => {
   try {
     const { tag, startPage = 1 } = req.body;
-    const CHUNK_SIZE = 250;
+    const CHUNK_SIZE = 1500;
 
     let currentPage = startPage;
     let accumulated = [];

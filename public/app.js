@@ -249,6 +249,17 @@ async function loadContactsByTag(tag) {
       const data = await resp.json();
       
       allLoadedContacts.push(...data.contacts);
+      
+      // Ordenação global: "Nunca" primeiro, depois por data mais antiga
+      allLoadedContacts.sort((a, b) => {
+        const aIsNunca = !a.last_dispatch || a.last_dispatch === 'Nunca';
+        const bIsNunca = !b.last_dispatch || b.last_dispatch === 'Nunca';
+        if (aIsNunca && !bIsNunca) return -1;
+        if (!aIsNunca && bIsNunca) return 1;
+        if (aIsNunca && bIsNunca) return 0;
+        return a.last_dispatch.localeCompare(b.last_dispatch);
+      });
+      
       selectedContacts = [...allLoadedContacts];
       hasMore = data.hasMore;
       page = data.nextPage; // Pula para a próxima página do chunk
@@ -325,6 +336,15 @@ function filterContacts() {
       (c.phone_number || '').includes(query)
     );
   }
+  // Manter ordenação: "Nunca" primeiro, depois por data mais antiga
+  selectedContacts.sort((a, b) => {
+    const aIsNunca = !a.last_dispatch || a.last_dispatch === 'Nunca';
+    const bIsNunca = !b.last_dispatch || b.last_dispatch === 'Nunca';
+    if (aIsNunca && !bIsNunca) return -1;
+    if (!aIsNunca && bIsNunca) return 1;
+    if (aIsNunca && bIsNunca) return 0;
+    return a.last_dispatch.localeCompare(b.last_dispatch);
+  });
   renderContacts(selectedContacts);
 }
 
