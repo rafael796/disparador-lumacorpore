@@ -203,7 +203,8 @@ async function loadTags() {
   try {
     const resp = await authorizedFetch('/api/tags');
     const tags = await resp.json();
-    container.innerHTML = tags.map(t => `
+    const visibleTags = tags.filter(t => t.title !== 'optout');
+    container.innerHTML = visibleTags.map(t => `
       <button class="tag-chip" onclick="selectTag('${t.title}', this)" style="border-left: 3px solid ${t.color || '#10b981'}">
         ${t.title}
       </button>

@@ -438,7 +438,13 @@ app.post('/api/contacts', async (req, res) => {
       currentPage++;
     }
 
-    const mappedContacts = accumulated.map(c => ({
+    // Filtrar contatos com tag "optout" (nunca mais recebem campanhas)
+    const filteredContacts = accumulated.filter(c => {
+      const labels = c.labels || [];
+      return !labels.includes('optout');
+    });
+
+    const mappedContacts = filteredContacts.map(c => ({
       id: c.id,
       name: c.name || '',
       phone_number: c.phone_number || '',
