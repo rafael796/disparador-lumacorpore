@@ -92,6 +92,11 @@ app.post('/api/login', (req, res) => {
 });
 
 // --- ROUTES ---
+app.get('/api/version', (req, res) => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf8'));
+  res.json({ version: pkg.version });
+});
+
 app.get('/api/history', (req, res) => {
   res.json(loadHistory());
 });
@@ -805,6 +810,24 @@ async function runDispatch(id) {
     updateHistory(id, { status: 'fatal_error', errorMsg: err.message });
   }
 }
+
+// --- STARTUP CLEANUP ---
+// Ao iniciar, marca disparos "running" órfãos como "interrupted"
+(function cleanupZombieDispatches() {
+  const history = loadHistory();
+  let cleaned = 0;
+  history.forEach(h => {
+    if (h.status === 'running') {
+      h.status = 'interrupted';
+      h.finishedAt = new Date().toISOString();
+      cleaned++;
+    }
+  });
+  if (cleaned > 0) {
+    saveHistory(history);
+    console.log(`🧹 ${cleaned} disparo(s) zumbi(s) marcado(s) como "interrupted" no startup.`);
+  }
+})();
 
 // --- START ---
 const PORT = process.env.PORT || 3000;

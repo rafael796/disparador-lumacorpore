@@ -36,6 +36,16 @@ function hideLogin() {
   document.getElementById('login-overlay').style.display = 'none';
 }
 
+// === VERSION ===
+async function loadVersion() {
+  try {
+    const resp = await fetch('/api/version');
+    const data = await resp.json();
+    const el = document.getElementById('app-version');
+    if (el) el.textContent = 'v' + data.version;
+  } catch (e) {}
+}
+
 // === INIT ===
 document.addEventListener('DOMContentLoaded', async () => {
   // Tenta login automático (detecta se servidor exige senha)
@@ -51,6 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       localStorage.setItem('luma_auth_token', authToken);
       hideLogin();
       loadTags();
+      loadVersion();
       restoreActiveDispatch();
       return;
     }
@@ -64,6 +75,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (test.ok) {
         hideLogin();
         loadTags();
+        loadVersion();
         restoreActiveDispatch();
         return;
       }
@@ -98,6 +110,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         localStorage.setItem('luma_auth_token', authToken);
         hideLogin();
         loadTags();
+        loadVersion();
         restoreActiveDispatch();
       } else {
         error.style.display = 'block';
