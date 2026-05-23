@@ -57,33 +57,24 @@
     },
     {
       "parameters": {
-        "method": "GET",
-        "url": "=https://www.googleapis.com/drive/v3/files",
-        "authentication": "oAuth2",
-        "sendQuery": true,
-        "queryParameters": {
-          "parameters": [
-            {
-              "name": "q",
-              "value": "'SEU_FOLDER_ID_AQUI' in parents and trashed=false"
-            },
-            {
-              "name": "fields",
-              "value": "files(id,name,mimeType,webContentLink)"
-            }
-          ]
+        "operation": "list",
+        "folderId": {
+          "__rl": true,
+          "value": "SEU_FOLDER_ID_AQUI",
+          "mode": "id"
         },
+        "returnAll": true,
         "options": {}
       },
       "id": "drive-listar",
       "name": "Listar Arquivos Drive",
-      "type": "n8n-nodes-base.httpRequest",
+      "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [910, 180],
       "credentials": {
-        "oAuth2Api": {
-          "id": "GOOGLE_OAUTH_CREDENTIAL_ID",
-          "name": "Google OAuth2"
+        "googleDriveOAuth2Api": {
+          "id": "GOOGLE_DRIVE_CREDENTIAL_ID",
+          "name": "Google Drive OAuth2"
         }
       }
     },
