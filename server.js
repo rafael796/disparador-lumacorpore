@@ -310,18 +310,17 @@ function getSecondsUntilNext7AM() {
 
 function calculateDelay(dailyLimit, sentToday) {
   if (sentToday >= dailyLimit) return 0;
-  const brTime = getBrazilDate();
-  const hour = brTime.getHours();
-  const hoursLeft = Math.max(1, 22 - hour);
-  const secondsLeft = hoursLeft * 3600;
-  const remainingToday = dailyLimit - sentToday;
-  
-  // TRAVA FIXA: Entre 17 minutos (1020s) e 25 minutos (1500s)
-  // Ignoramos o baseDelay para garantir que nunca ultrapasse o pedido do usuário
-  const safetyMin = 1020; 
-  const randomExtra = Math.floor(Math.random() * 480); // + 8 minutos de variação
 
-  return safetyMin + randomExtra;
+  // META: 5 mensagens por hora (média de 12 min = 720s entre mensagens)
+  // Intervalo aleatorizado: entre 7 min (420s) e 17 min (1020s)
+  // Média resultante: ~12 min → ~5 msgs/hora
+  const minDelay = 420;   // 7 minutos (piso)
+  const maxDelay = 1020;  // 17 minutos (teto)
+  const range = maxDelay - minDelay; // 600s de variação
+
+  const randomDelay = minDelay + Math.floor(Math.random() * (range + 1));
+
+  return randomDelay;
 }
 
 // --- HELPERS (PDF) ---
