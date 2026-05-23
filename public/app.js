@@ -39,7 +39,7 @@ function hideLogin() {
 // === VERSION ===
 async function loadVersion() {
   try {
-    const resp = await fetch('/api/version');
+    const resp = await authorizedFetch('/api/version');
     const data = await resp.json();
     const el = document.getElementById('app-version');
     if (el) el.textContent = 'v' + data.version;
