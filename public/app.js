@@ -128,6 +128,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // === NAVIGATION ===
+let historyRefreshInterval = null;
+
 function switchTab(tabId) {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.header-tab').forEach(t => t.classList.remove('active'));
@@ -136,7 +138,17 @@ function switchTab(tabId) {
   const btn = document.querySelector(`.header-tab[data-tab="${tabId}"]`);
   if (btn) btn.classList.add('active');
   
-  if (tabId === 'history') loadHistory();
+  // Limpa auto-refresh anterior
+  if (historyRefreshInterval) {
+    clearInterval(historyRefreshInterval);
+    historyRefreshInterval = null;
+  }
+  
+  if (tabId === 'history') {
+    loadHistory();
+    // Auto-refresh a cada 10 segundos enquanto na aba relatórios
+    historyRefreshInterval = setInterval(loadHistory, 10000);
+  }
 }
 
 async function loadHistory() {

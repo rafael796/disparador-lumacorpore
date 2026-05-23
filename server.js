@@ -777,6 +777,9 @@ async function runDispatch(id) {
       d.log.push({ time: timestamp, contact: contact.name, phone: contact.phone_number, status: 'error', message: e.message });
     }
 
+    // Atualizar histórico em tempo real após cada envio
+    updateHistory(id, { sent: d.sent, errors: d.errors });
+
     // Delay Dinâmico (Anti-ban)
     if (i < d.contacts.length - 1 && !d.cancelled) {
       const delay = calculateDelay(d.dailyLimit, d.sentToday);
