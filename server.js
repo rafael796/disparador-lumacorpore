@@ -185,7 +185,8 @@ REGRAS:
 5. Retorne APENAS a mensagem reescrita, sem explicações
 6. Use apenas o primeiro nome
 7. Não altere nomes próprios (Wanessa, Luma Corpore)
-8. CRÍTICO: MANTENHA INTACTA QUALQUER formatação do WhatsApp! Não remova os asteriscos de negrito (*texto*), os sublinhados de itálico (_texto_) nem os tis de riscado (~texto~). Se houver uma palavra formatada como *exemplo*, ela DEVE continuar como *exemplo* ou o sinônimo escolhido DEVE estar entre os mesmos asteriscos.` },
+8. CRÍTICO: MANTENHA INTACTA QUALQUER formatação do WhatsApp! Não remova os asteriscos de negrito (*texto*), os sublinhados de itálico (_texto_) nem os tis de riscado (~texto~). Se houver uma palavra formatada como *exemplo*, ela DEVE continuar como *exemplo* ou o sinônimo escolhido DEVE estar entre os mesmos asteriscos.
+9. OBRIGATÓRIO: VARIE A SAUDAÇÃO INICIAL da mensagem a cada reescrita. Se a mensagem começa com "Olá", troque por uma alternativa natural e diferente. Opções: Oi, Olá, E aí, Ei, Joia, Tudo bem, Tudo certo, Como vai, Bom dia (manhã), Boa tarde (tarde), Boa noite (noite). NUNCA repita a mesma saudação da mensagem original. A escolha deve parecer humana e natural para o contexto.` },
           { role: 'user', content: `Reescreva esta mensagem:\n\n${text}` }
         ]
       })
@@ -239,7 +240,8 @@ REGRAS:
 5. Retorne APENAS a mensagem reescrita, sem explicações
 6. Use apenas o primeiro nome
 7. Não altere nomes próprios (Wanessa, Luma Corpore)
-8. CRÍTICO: MANTENHA INTACTA QUALQUER formatação do WhatsApp! Não remova os asteriscos de negrito (*texto*), os sublinhados de itálico (_texto_) nem os tis de riscado (~texto~). Se houver uma palavra formatada como *exemplo*, ela DEVE continuar como *exemplo* ou o sinônimo escolhido DEVE estar entre os mesmos asteriscos.` }]
+8. CRÍTICO: MANTENHA INTACTA QUALQUER formatação do WhatsApp! Não remova os asteriscos de negrito (*texto*), os sublinhados de itálico (_texto_) nem os tis de riscado (~texto~). Se houver uma palavra formatada como *exemplo*, ela DEVE continuar como *exemplo* ou o sinônimo escolhido DEVE estar entre os mesmos asteriscos.
+9. OBRIGATÓRIO: VARIE A SAUDAÇÃO INICIAL da mensagem a cada reescrita. Se a mensagem começa com "Olá", troque por uma alternativa natural e diferente. Opções: Oi, Olá, E aí, Ei, Joia, Tudo bem, Tudo certo, Como vai, Bom dia (manhã), Boa tarde (tarde), Boa noite (noite). NUNCA repita a mesma saudação da mensagem original. A escolha deve parecer humana e natural para o contexto.` }]
         },
         contents: [{ parts: [{ text: `Reescreva esta mensagem:\n\n${text}` }] }],
         generationConfig: {
@@ -297,35 +299,73 @@ function getBrazilDate() {
   return new Date(hash.year, hash.month - 1, hash.day, hash.hour, hash.minute, hash.second);
 }
 
-function isWorkingHours() {
-  const brTime = getBrazilDate();
-  const hour = brTime.getHours();
-  return hour >= 7 && hour < 22; // 07:00 às 21:59
-}
-
-function getSecondsUntilNext7AM() {
+function getSecondsUntilMidnight() {
   const brTime = getBrazilDate();
   const target = new Date(brTime);
-  if (brTime.getHours() >= 22) {
-    target.setDate(target.getDate() + 1);
-  }
-  target.setHours(7, 0, 0, 0);
+  target.setDate(target.getDate() + 1);
+  target.setHours(0, 0, 0, 0);
   return Math.max(0, Math.floor((target.getTime() - brTime.getTime()) / 1000));
 }
 
 function calculateDelay(dailyLimit, sentToday) {
   if (sentToday >= dailyLimit) return 0;
 
-  // META: 5 mensagens por hora (média de 12 min = 720s entre mensagens)
-  // Intervalo aleatorizado: entre 7 min (420s) e 17 min (1020s)
-  // Média resultante: ~12 min → ~5 msgs/hora
-  const minDelay = 420;   // 7 minutos (piso)
-  const maxDelay = 1020;  // 17 minutos (teto)
-  const range = maxDelay - minDelay; // 600s de variação
+  // META: 2 mensagens por hora (média de ~45 min entre mensagens)
+  // Intervalo aleatorizado: entre 35 min (2100s) e 55 min (3300s)
+  // Garante máximo de ~2/hora e mínimo de 35 min entre envios
+  const minDelay = 2100;  // 35 minutos (piso obrigatório)
+  const maxDelay = 3300;  // 55 minutos (teto)
+  const range = maxDelay - minDelay; // 1200s de variação
 
   const randomDelay = minDelay + Math.floor(Math.random() * (range + 1));
 
   return randomDelay;
+}
+
+// --- MONITORAMENTO DE CONEXÃO ---
+async function checkMessageDelivery(conversationId) {
+  try {
+    const msgs = await chatwootGet(`/conversations/${conversationId}/messages`);
+    const payload = msgs.payload || [];
+    // Pegar a última mensagem outgoing
+    const lastOutgoing = payload.find(m => m.message_type === 1);
+    if (lastOutgoing && lastOutgoing.status === 'failed') {
+      return 'failed';
+    }
+    return lastOutgoing?.status || 'sent';
+  } catch (e) {
+    console.error('Erro ao verificar entrega:', e.message);
+    return 'error';
+  }
+}
+
+let gestorAlertSent = false; // Garante envio do alerta apenas 1x por ciclo
+
+async function notifyGestor(message) {
+  if (gestorAlertSent) return; // Já enviou alerta neste ciclo
+  const gestorPhone = process.env.GESTOR_PHONE;
+  if (!gestorPhone) {
+    console.error('GESTOR_PHONE não configurado no .env');
+    return;
+  }
+  try {
+    const search = await chatwootGet(`/contacts/search?q=${encodeURIComponent(gestorPhone)}`);
+    const gestor = search?.payload?.find(c => c.phone_number === gestorPhone);
+    if (gestor) {
+      // Usar inbox 2 (Produção) — NUNCA a inbox de massa
+      await chatwootPost('/conversations', {
+        contact_id: gestor.id,
+        inbox_id: 2,
+        message: { content: message, message_type: 'outgoing' }
+      });
+      gestorAlertSent = true;
+      console.log('📱 Gestor notificado via inbox 2 (Produção)');
+    } else {
+      console.error('Contato do gestor não encontrado no Chatwoot:', gestorPhone);
+    }
+  } catch (e) {
+    console.error('Erro ao notificar gestor:', e.message);
+  }
 }
 
 // --- HELPERS (PDF) ---
@@ -630,6 +670,9 @@ async function runDispatch(id) {
     const d = dispatches[id];
     const inboxId = Number(INBOX_ID) || 3;
     let lastDay = new Date().getDate();
+    let consecutiveFailures = 0;
+    const MAX_CONSECUTIVE_FAILURES = 3;
+    gestorAlertSent = false; // Reset alerta a cada novo disparo
 
   for (let i = 0; i < d.contacts.length; i++) {
     // Checar mudança de dia para resetar o contador
@@ -641,29 +684,13 @@ async function runDispatch(id) {
 
     if (d.cancelled) break;
 
-    // 1. Checar Horário Comercial (7h às 22h)
-    while (!isWorkingHours() && !d.cancelled) {
-      const waitSecs = getSecondsUntilNext7AM();
-      d.nextMessageAt = Date.now() + (waitSecs * 1000);
-      d.log.push({ time: new Date().toLocaleTimeString('pt-BR'), contact: 'SISTEMA', phone: '-', status: 'wait', message: `Fora do horario de funcionamento. Retomaremos os disparos às 07:00...` });
-      d.paused = true;
-      
-      let waited = 0;
-      while (waited < waitSecs && !d.cancelled) {
-        await sleep(1000);
-        waited++;
-      }
-      d.paused = false;
-      d.nextMessageAt = null;
-    }
+    // Disparos 24h — sem restrição de horário
 
-    if (d.cancelled) break;
-
-    // 2. Checar Limite Diário
+    // 1. Checar Limite Diário
     while (d.sentToday >= d.dailyLimit && !d.cancelled) {
-      const waitSecs = getSecondsUntilNext7AM();
+      const waitSecs = getSecondsUntilMidnight();
       d.nextMessageAt = Date.now() + (waitSecs * 1000);
-      d.log.push({ time: new Date().toLocaleTimeString('pt-BR'), contact: 'SISTEMA', phone: '-', status: 'wait', message: `Limite diário (${d.dailyLimit}) atingido. Pausado até amanhã às 07:00.` });
+      d.log.push({ time: new Date().toLocaleTimeString('pt-BR'), contact: 'SISTEMA', phone: '-', status: 'wait', message: `Limite diário (${d.dailyLimit}) atingido. Pausado até meia-noite.` });
       d.paused = true;
       
       let waited = 0;
@@ -777,6 +804,31 @@ async function runDispatch(id) {
       d.sent++;
       d.sentToday++;
       d.log.push({ time: timestamp, contact: contact.name, phone: contact.phone_number, status: 'ok', message: finalMessage.substring(0, 60) + '...' });
+
+      // --- Verificar entrega (anti-desconexão) ---
+      // Aguardar 15s para webhook do Meta atualizar o status
+      const convId = convResult?.id;
+      if (convId) {
+        await sleep(15000);
+        const deliveryStatus = await checkMessageDelivery(convId);
+        if (deliveryStatus === 'failed') {
+          consecutiveFailures++;
+          d.log.push({ time: timestamp, contact: contact.name, phone: contact.phone_number, status: 'warning', message: `⚠️ Falha na entrega (${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES})` });
+          
+          if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+            d.log.push({ time: timestamp, contact: 'SISTEMA', phone: '-', status: 'error', message: '🚨 3 falhas consecutivas! Inbox possivelmente desconectada. Pausando...' });
+            await notifyGestor('🚨 Caixa de entrada desconectada, reconecte!');
+            d.paused = true;
+            while (d.paused && !d.cancelled) {
+              await sleep(5000);
+            }
+            consecutiveFailures = 0;
+            gestorAlertSent = false; // Permitir novo alerta se falhar de novo
+          }
+        } else {
+          consecutiveFailures = 0; // Reset se entrega ok
+        }
+      }
 
     } catch (e) {
       d.errors++;
