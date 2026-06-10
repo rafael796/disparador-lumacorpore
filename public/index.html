@@ -77,7 +77,7 @@
           <div class="card">
             <h2>👥 Contatos Selecionados (<span id="contact-count">0</span>)</h2>
             <div class="search-box">
-              <input type="text" id="search-input" placeholder="Buscar por nome ou telefone..." oninput="filterContacts()">
+              <input type="text" id="search-input" placeholder="Buscar por nome ou telefone..." oninput="filterContacts()" autocomplete="off">
             </div>
             <div id="contacts-table" class="contacts-table">
               <p class="empty-state">Selecione uma tag para carregar contatos</p>
@@ -99,7 +99,7 @@
             <h2>✍️ Compor Mensagem</h2>
             <div class="setting" style="margin-bottom: 16px;">
               <label>🏷️ Título da Campanha (Obrigatório)</label>
-              <input type="text" id="campaign-title" placeholder="Ex: Promoção Vasinhos Maio/26" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+              <input type="text" id="campaign-title" placeholder="Ex: Promoção Vasinhos Maio/26" required autocomplete="off" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
             </div>
             <p class="hint">Use <code>{NOME}</code> para inserir o nome do contato automaticamente.</p>
             <textarea id="message-input" rows="10" placeholder="Digite sua mensagem aqui...">🌸 Oi {NOME}! Aqui é a Wanessa, biomédica da Clínica Luma Corpore.
