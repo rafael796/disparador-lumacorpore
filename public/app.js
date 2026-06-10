@@ -267,10 +267,12 @@ async function loadContactsByTag(tag) {
 
   try {
     while (hasMore) {
+      const dateFilter = document.getElementById('filter-date')?.value || null;
+
       const resp = await authorizedFetch('/api/contacts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tag, startPage: page }),
+        body: JSON.stringify({ tag, startPage: page, dateFilter }),
         signal
       });
       

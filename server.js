@@ -186,7 +186,8 @@ REGRAS:
 6. Use apenas o primeiro nome
 7. Não altere nomes próprios (Wanessa, Luma Corpore)
 8. CRÍTICO: MANTENHA INTACTA QUALQUER formatação do WhatsApp! Não remova os asteriscos de negrito (*texto*), os sublinhados de itálico (_texto_) nem os tis de riscado (~texto~). Se houver uma palavra formatada como *exemplo*, ela DEVE continuar como *exemplo* ou o sinônimo escolhido DEVE estar entre os mesmos asteriscos.
-9. OBRIGATÓRIO: VARIE A SAUDAÇÃO INICIAL da mensagem a cada reescrita. Se a mensagem começa com "Olá", troque por uma alternativa natural e diferente. Opções: Oi, Olá, E aí, Ei, Joia, Tudo bem, Tudo certo, Como vai, Bom dia (manhã), Boa tarde (tarde), Boa noite (noite). NUNCA repita a mesma saudação da mensagem original. A escolha deve parecer humana e natural para o contexto.` },
+9. OBRIGATÓRIO: VARIE A SAUDAÇÃO INICIAL da mensagem a cada reescrita. Se a mensagem começa com "Olá", troque por uma alternativa natural e diferente. Opções: Oi, Olá, E aí, Ei, Joia, Tudo bem, Tudo certo, Como vai, Bom dia (manhã), Boa tarde (tarde), Boa noite (noite). NUNCA repita a mesma saudação da mensagem original. A escolha deve parecer humana e natural para o contexto.
+10. PROIBIDO usar termos genéricos ou robóticos como: "querido contato", "prezado cliente", "caro amigo", "estimado", "querido(a)". Se a mensagem tem {NOME} ou nome próprio, use o nome. Se NÃO tem nome, use APENAS a saudação sem vocativo (ex: "Oi! 👋" e não "Oi, querido contato!").` },
           { role: 'user', content: `Reescreva esta mensagem:\n\n${text}` }
         ]
       })
@@ -241,7 +242,8 @@ REGRAS:
 6. Use apenas o primeiro nome
 7. Não altere nomes próprios (Wanessa, Luma Corpore)
 8. CRÍTICO: MANTENHA INTACTA QUALQUER formatação do WhatsApp! Não remova os asteriscos de negrito (*texto*), os sublinhados de itálico (_texto_) nem os tis de riscado (~texto~). Se houver uma palavra formatada como *exemplo*, ela DEVE continuar como *exemplo* ou o sinônimo escolhido DEVE estar entre os mesmos asteriscos.
-9. OBRIGATÓRIO: VARIE A SAUDAÇÃO INICIAL da mensagem a cada reescrita. Se a mensagem começa com "Olá", troque por uma alternativa natural e diferente. Opções: Oi, Olá, E aí, Ei, Joia, Tudo bem, Tudo certo, Como vai, Bom dia (manhã), Boa tarde (tarde), Boa noite (noite). NUNCA repita a mesma saudação da mensagem original. A escolha deve parecer humana e natural para o contexto.` }]
+9. OBRIGATÓRIO: VARIE A SAUDAÇÃO INICIAL da mensagem a cada reescrita. Se a mensagem começa com "Olá", troque por uma alternativa natural e diferente. Opções: Oi, Olá, E aí, Ei, Joia, Tudo bem, Tudo certo, Como vai, Bom dia (manhã), Boa tarde (tarde), Boa noite (noite). NUNCA repita a mesma saudação da mensagem original. A escolha deve parecer humana e natural para o contexto.
+10. PROIBIDO usar termos genéricos ou robóticos como: "querido contato", "prezado cliente", "caro amigo", "estimado", "querido(a)". Se a mensagem tem {NOME} ou nome próprio, use o nome. Se NÃO tem nome, use APENAS a saudação sem vocativo (ex: "Oi! 👋" e não "Oi, querido contato!").` }]
         },
         contents: [{ parts: [{ text: `Reescreva esta mensagem:\n\n${text}` }] }],
         generationConfig: {
@@ -442,7 +444,7 @@ app.post('/api/history/:id/cancel', (req, res) => {
 // Buscar contatos por tag (chunks de ~250 contatos para o frontend)
 app.post('/api/contacts', async (req, res) => {
   try {
-    const { tag, startPage = 1 } = req.body;
+    const { tag, dateFilter, startPage = 1 } = req.body;
     const CHUNK_SIZE = 1500;
 
     let currentPage = startPage;
@@ -484,13 +486,17 @@ app.post('/api/contacts', async (req, res) => {
       return !labels.includes('optout');
     });
 
-    const mappedContacts = filteredContacts.map(c => ({
+    let mappedContacts = filteredContacts.map(c => ({
       id: c.id,
       name: c.name || '',
       phone_number: c.phone_number || '',
       first_name: (c.name || '').split(' ')[0] || 'cliente',
       last_dispatch: c.custom_attributes?.ultimo_disparo || 'Nunca'
     }));
+
+    if (dateFilter) {
+      mappedContacts = mappedContacts.filter(c => c.last_dispatch === dateFilter);
+    }
 
     // Ordenação inteligente: 
     // 1. Quem "Nunca" recebeu (prioridade máxima)

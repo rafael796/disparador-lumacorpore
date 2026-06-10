@@ -62,13 +62,16 @@
             <div id="tags-list" class="tags-container">
               <div class="loading-spinner"></div>
             </div>
-            <div style="display: flex; gap: 8px;">
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px;">
               <button class="btn btn-outline" id="btn-all-contacts" onclick="loadAllContacts()">
                 📦 Todos os Contatos
               </button>
               <button class="btn btn-outline" id="btn-clear-contacts" onclick="clearContactsList()">
                 🗑️ Limpar Lista
               </button>
+              <div style="border-left: 1px solid #eee; height: 24px; margin: 0 4px;"></div>
+              <label for="filter-date" style="font-size: 13px; font-weight: 500; color: #555;">Filtro (Últ. Envio):</label>
+              <input type="date" id="filter-date" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 13px;">
             </div>
           </div>
           <div class="card">
