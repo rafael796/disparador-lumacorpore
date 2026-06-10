@@ -19,8 +19,8 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{ $json.message_type }}",
-              "operation": "equals",
+              "value1": "={{ $json.body.message_type }}",
+              "operation": "equal",
               "value2": "incoming"
             }
           ]
@@ -38,15 +38,15 @@
           "rules": [
             {
               "value2": "1",
-              "operation": "equals"
+              "operation": "equal"
             },
             {
               "value2": "2",
-              "operation": "equals"
+              "operation": "equal"
             }
           ]
         },
-        "value1": "={{ $json.content.trim() }}",
+        "value1": "={{ $json.body.content.trim() }}",
         "fallbackOutput": "extra"
       },
       "id": "switch-resposta",
@@ -81,18 +81,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://chatwoot-oracle.lumacorpore.com.br/api/v1/accounts/1/conversations/{{ $json.conversation.id }}/messages",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "api_access_token",
-              "value": "gWKmEkU6VN8oqnXy1aqReARV"
-            }
-          ]
-        },
+        "url": "=https://chatwoot-oracle.lumacorpore.com.br/api/v1/accounts/1/conversations/{{ $json.body.conversation.id }}/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -112,57 +103,43 @@
       "name": "Enviar Texto Promo",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
-      "position": [1130, 180]
+      "position": [1130, 180],
+      "credentials": {
+        "chatwootApi": {
+          "id": "CHATWOOT_CREDENTIAL_ID",
+          "name": "ChatWoot account"
+        }
+      }
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://chatwoot-oracle.lumacorpore.com.br/api/v1/accounts/1/conversations/{{ $('Webhook Chatwoot').item.json.conversation.id }}/labels",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "api_access_token",
-              "value": "gWKmEkU6VN8oqnXy1aqReARV"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
+        "url": "=https://chatwoot-oracle.lumacorpore.com.br/api/v1/accounts/1/conversations/{{ $('Webhook Chatwoot').item.json.body.conversation.id }}/labels",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={ \"labels\": {{ JSON.stringify([...(($('Webhook Chatwoot').item.json.conversation.labels) || []), 'optout']) }} }",
+        "jsonBody": "={ \"labels\": {{ JSON.stringify([...(($('Webhook Chatwoot').item.json.body.conversation.labels) || []), 'optout']) }} }",
         "options": {}
       },
       "id": "add-tag-optout-conv",
       "name": "Tag optout (Conversa)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
-      "position": [910, 420]
+      "position": [910, 420],
+      "credentials": {
+        "chatwootApi": {
+          "id": "CHATWOOT_CREDENTIAL_ID",
+          "name": "ChatWoot account"
+        }
+      }
     },
     {
       "parameters": {
         "method": "PUT",
-        "url": "=https://chatwoot-oracle.lumacorpore.com.br/api/v1/accounts/1/contacts/{{ $('Webhook Chatwoot').item.json.sender.id }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "api_access_token",
-              "value": "gWKmEkU6VN8oqnXy1aqReARV"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
+        "url": "=https://chatwoot-oracle.lumacorpore.com.br/api/v1/accounts/1/contacts/{{ $('Webhook Chatwoot').item.json.body.sender.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "{ \"custom_attributes\": { \"optout\": true, \"optout_data\": \"{{ new Date().toISOString().split('T')[0] }}\" } }",
@@ -172,23 +149,20 @@
       "name": "Marcar Contato Optout",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
-      "position": [1130, 420]
+      "position": [1130, 420],
+      "credentials": {
+        "chatwootApi": {
+          "id": "CHATWOOT_CREDENTIAL_ID",
+          "name": "ChatWoot account"
+        }
+      }
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://chatwoot-oracle.lumacorpore.com.br/api/v1/accounts/1/conversations/{{ $('Webhook Chatwoot').item.json.conversation.id }}/messages",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "api_access_token",
-              "value": "gWKmEkU6VN8oqnXy1aqReARV"
-            }
-          ]
-        },
+        "url": "=https://chatwoot-oracle.lumacorpore.com.br/api/v1/accounts/1/conversations/{{ $('Webhook Chatwoot').item.json.body.conversation.id }}/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -208,7 +182,13 @@
       "name": "Confirmar Opt-out",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
-      "position": [1350, 420]
+      "position": [1350, 420],
+      "credentials": {
+        "chatwootApi": {
+          "id": "CHATWOOT_CREDENTIAL_ID",
+          "name": "ChatWoot account"
+        }
+      }
     },
     {
       "parameters": {},

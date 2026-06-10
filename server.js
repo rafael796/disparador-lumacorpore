@@ -494,9 +494,7 @@ app.post('/api/contacts', async (req, res) => {
       last_dispatch: c.custom_attributes?.ultimo_disparo || 'Nunca'
     }));
 
-    if (dateFilter) {
-      mappedContacts = mappedContacts.filter(c => c.last_dispatch === dateFilter);
-    }
+    // Filtragem por data agora é feita no frontend para resposta instantânea
 
     // Ordenação inteligente: 
     // 1. Quem "Nunca" recebeu (prioridade máxima)

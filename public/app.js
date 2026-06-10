@@ -267,12 +267,11 @@ async function loadContactsByTag(tag) {
 
   try {
     while (hasMore) {
-      const dateFilter = document.getElementById('filter-date')?.value || null;
-
+      // O dateFilter agora é aplicado apenas no frontend via filterContacts() para ser instantâneo
       const resp = await authorizedFetch('/api/contacts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tag, startPage: page, dateFilter }),
+        body: JSON.stringify({ tag, startPage: page }),
         signal
       });
       
@@ -301,8 +300,8 @@ async function loadContactsByTag(tag) {
          loadingText.textContent = `Carregando... ${allLoadedContacts.length} de ${total}`;
       }
 
-      // Update table incrementally
-      renderContacts(selectedContacts);
+      // Update table incrementally using filterContacts to apply current search/date filters
+      filterContacts();
       document.getElementById('btn-next-1').disabled = selectedContacts.length === 0;
     }
   } catch (e) {
@@ -359,13 +358,20 @@ function removeContact(id) {
 
 function filterContacts() {
   const query = document.getElementById('search-input').value.toLowerCase();
-  if (!query) {
+  const dateFilter = document.getElementById('filter-date')?.value || null;
+
+  if (!query && !dateFilter) {
     selectedContacts = [...allLoadedContacts];
   } else {
-    selectedContacts = allLoadedContacts.filter(c =>
-      (c.name || '').toLowerCase().includes(query) ||
-      (c.phone_number || '').includes(query)
-    );
+    selectedContacts = allLoadedContacts.filter(c => {
+      const matchSearch = !query || 
+        (c.name || '').toLowerCase().includes(query) ||
+        (c.phone_number || '').includes(query);
+      
+      const matchDate = !dateFilter || c.last_dispatch === dateFilter;
+
+      return matchSearch && matchDate;
+    });
   }
   // Manter ordenação: "Nunca" primeiro, depois por data mais antiga
   selectedContacts.sort((a, b) => {

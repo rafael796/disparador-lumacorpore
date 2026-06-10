@@ -1,0 +1,409 @@
+{
+  "name": "Luma Corpore - Respostas Campanha",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatwoot-respostas",
+        "options": {}
+      },
+      "id": "99da4341-306c-44e7-b064-543ec106fc69",
+      "name": "Webhook Chatwoot",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        144
+      ],
+      "webhookId": "fcf4a9fd-6977-4bae-8cec-39d4717d84b0"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.message_type }}",
+              "value2": "incoming"
+            }
+          ]
+        }
+      },
+      "id": "55687e0b-5bef-4c43-b814-a50606dfa508",
+      "name": "É mensagem do cliente?1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "value1": "={{ $json.body.content.trim() }}",
+        "rules": {
+          "rules": [
+            {
+              "operation": "equal",
+              "value2": 1
+            },
+            {
+              "operation": "equal",
+              "value2": 2
+            }
+          ]
+        },
+        "fallbackOutput": "extra"
+      },
+      "id": "33e3f5f2-5990-4128-8215-4c624ee825a7",
+      "name": "Qual resposta?1",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        64,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://chatwoot-oracle.lumacorpore.com.br/api/v1/accounts/1/conversations/{{ $('Webhook Chatwoot').item.json.body.conversation.id }}/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "🎉 Que ótimo! Aqui estão as nossas promoções especiais para você! 💖\n\nConfira os detalhes abaixo e me avise se tiver alguma dúvida! 😊"
+            },
+            {
+              "name": "message_type",
+              "value": "outgoing"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4c3ee87f-16be-477f-8b57-f98b7fc09e6e",
+      "name": "Enviar Texto Promo1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        272,
+        80
+      ],
+      "credentials": {
+        "chatwootApi": {
+          "id": "st18fM51jCQjPjII",
+          "name": "ChatWoot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "'1MIvD-bra14andHXabFCxGPOFw2CcXft6' in parents and trashed=false",
+        "returnAll": true,
+        "filter": {},
+        "options": {}
+      },
+      "id": "f7d2b36b-7a8e-4ea9-ad61-f223da0d5654",
+      "name": "Listar Arquivos Drive1",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        496,
+        80
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "tsYnDVIEYjove9p3",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-download-node-0001",
+      "name": "Download Arquivo",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        720,
+        80
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "tsYnDVIEYjove9p3",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://chatwoot-oracle.lumacorpore.com.br/api/v1/accounts/1/conversations/{{ $('Webhook Chatwoot').item.json.body.conversation.id }}/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": ""
+            },
+            {
+              "name": "message_type",
+              "value": "outgoing"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "attachments[]",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-send-attach-0001",
+      "name": "Enviar Imagem Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        944,
+        80
+      ],
+      "credentials": {
+        "chatwootApi": {
+          "id": "st18fM51jCQjPjII",
+          "name": "ChatWoot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://chatwoot-oracle.lumacorpore.com.br/api/v1/accounts/1/conversations/{{ $('Webhook Chatwoot').item.json.body.conversation.id }}/labels",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"labels\": {{ JSON.stringify([...(($('Webhook Chatwoot').item.json.body.conversation.labels) || []), 'optout']) }} }",
+        "options": {}
+      },
+      "id": "f8db1bf5-e7ab-4a51-b6a6-eb429f0b47a1",
+      "name": "Tag optout (Conversa)1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        272,
+        320
+      ],
+      "credentials": {
+        "chatwootApi": {
+          "id": "st18fM51jCQjPjII",
+          "name": "ChatWoot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://chatwoot-oracle.lumacorpore.com.br/api/v1/accounts/1/contacts/{{ $('Webhook Chatwoot').item.json.body.sender.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{ \"custom_attributes\": { \"optout\": true, \"optout_data\": \"{{ new Date().toISOString().split('T')[0] }}\" } }",
+        "options": {}
+      },
+      "id": "3e07df5a-37d3-44d1-a267-a91959a39dca",
+      "name": "Marcar Contato Optout1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        496,
+        320
+      ],
+      "credentials": {
+        "chatwootApi": {
+          "id": "st18fM51jCQjPjII",
+          "name": "ChatWoot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://chatwoot-oracle.lumacorpore.com.br/api/v1/accounts/1/conversations/{{ $('Webhook Chatwoot').item.json.body.conversation.id }}/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "Entendido! Você foi removido(a) da nossa lista de promoções. Se mudar de ideia, é só nos enviar uma mensagem. 💛"
+            },
+            {
+              "name": "message_type",
+              "value": "outgoing"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "13dec344-57e1-417a-9a3d-b820f8e50365",
+      "name": "Confirmar Opt-out1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        720,
+        320
+      ],
+      "credentials": {
+        "chatwootApi": {
+          "id": "st18fM51jCQjPjII",
+          "name": "ChatWoot account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "315284de-a3ff-47a4-8f02-f34c6469b495",
+      "name": "Ignorar (Humano responde)1",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        272,
+        448
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Chatwoot": {
+      "main": [
+        [
+          {
+            "node": "É mensagem do cliente?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "É mensagem do cliente?1": {
+      "main": [
+        [
+          {
+            "node": "Qual resposta?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qual resposta?1": {
+      "main": [
+        [
+          {
+            "node": "Enviar Texto Promo1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tag optout (Conversa)1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ignorar (Humano responde)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Texto Promo1": {
+      "main": [
+        [
+          {
+            "node": "Listar Arquivos Drive1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar Arquivos Drive1": {
+      "main": [
+        [
+          {
+            "node": "Download Arquivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Arquivo": {
+      "main": [
+        [
+          {
+            "node": "Enviar Imagem Chatwoot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag optout (Conversa)1": {
+      "main": [
+        [
+          {
+            "node": "Marcar Contato Optout1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar Contato Optout1": {
+      "main": [
+        [
+          {
+            "node": "Confirmar Opt-out1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ad1983ce-bf81-453c-99a4-a3551e638949",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c4218c872a8136a0e3b73a74829fd947aeb1e2414ddaadf40355fc765d2b1c82"
+  },
+  "id": "wF5eXrgEHBN9MxPM",
+  "tags": []
+}
